@@ -194,7 +194,7 @@ common/
 
 ### guards/
 
-Protección de rutas.
+Protección de rutas..
 
 Ejemplo:
 
