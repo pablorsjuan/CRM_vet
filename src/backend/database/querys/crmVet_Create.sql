@@ -62,28 +62,28 @@ VALUES
 -- 2. DUEÑOS
 -- =========================================================
 
-INSERT INTO duenos (id_persona,num_mascotas)
+INSERT INTO duenos (id_usuario,num_mascotas)
 VALUES(1,1);
 
 -- =========================================================
 -- 3. VETERINARIOS
 -- =========================================================
 
-INSERT INTO veterinarios (id_persona,matricula_profesional,especialidad)
+INSERT INTO veterinarios (id_usuario,matricula_profesional,especialidad)
 VALUES(2,123456,'Medicina veterinaria general');
 
 -- =========================================================
 -- 4. PASEADORES
 -- =========================================================
 
-INSERT INTO paseadores (id_persona,hora_paseo)
+INSERT INTO paseadores (id_usuario,hora_paseo)
 VALUES(3,'08:00:00');
 
 -- =========================================================
 -- 5. PELUQUEROS
 -- =========================================================
 
-INSERT INTO peluqueros (id_persona,anos_experiencia)
+INSERT INTO peluqueros (id_usuario,anos_experiencia)
 VALUES(4,5);
 
 -- =========================================================
@@ -91,7 +91,7 @@ VALUES(4,5);
 -- =========================================================
 
 INSERT INTO mascotas (nombre_mascota,fecha_nacimiento,id_dueno)
-VALUES('Max','2021-06-12',1);
+VALUES('Max','2021-06-12',2);
 
 -- =========================================================
 -- 7. HISTORIAS CLÍNICAS
@@ -109,7 +109,7 @@ INSERT INTO historias_clinicas (
 VALUES
 (
     '2026-10-05',
-    1,
+    4,
     1,
     'Consulta general',
     'Sin antecedentes relevantes',
@@ -133,7 +133,7 @@ INSERT INTO citas (
 VALUES
 (
     '2026-10-10',
-    1,
+    4,
     '10:00:00',
     '10:30:00',
     'Consulta general',
