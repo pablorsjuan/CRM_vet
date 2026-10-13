@@ -22,13 +22,9 @@ tiene su propio módulo.
 
 ```text
 crm-veterinario/
-│
-├── src/
-├── test/
 ├── docs/
-├── database/
-├── scripts/
-└── uploads/
+├── src/
+└── test/
 ```
 
 ---
@@ -39,7 +35,6 @@ Contiene todo el código fuente del backend.
 
 ```text
 src/
-│
 ├── modules/
 ├── common/
 ├── config/
@@ -50,7 +45,11 @@ src/
 
 ---
 
-# `src/modules`
+# Carpeta `src/frontend`
+Se encuentran las carpetas relacionadas al manejo de React y sus dependencias.
+
+
+# `src/backend/modules`
 
 Aquí vive toda la lógica del negocio.
 
@@ -58,7 +57,6 @@ Cada carpeta representa un módulo independiente.
 
 ```text
 modules/
-│
 ├── auth/
 ├── users/
 ├── pets/
@@ -109,9 +107,7 @@ Ejemplos de responsabilidades:
 ---
 
 ### appointments/
-
 Gestión completa de citas.
-
 Incluye:
 
 - Agendar
@@ -124,9 +120,7 @@ Este será uno de los módulos principales del CRM.
 ---
 
 ### veterinarians/
-
 Información relacionada con veterinarios.
-
 Responsabilidades:
 
 - Disponibilidad
@@ -136,21 +130,17 @@ Responsabilidades:
 ---
 
 ### groomers/
-
 Gestión del personal de peluquería.
 
 ---
 
 ### walkers/
-
 Gestión de paseadores.
 
 ---
 
 ### services/
-
 Servicios ofrecidos por la clínica.
-
 Ejemplos:
 
 - Consulta
@@ -161,9 +151,7 @@ Ejemplos:
 ---
 
 ### roles/
-
 Control de permisos.
-
 Responsabilidades:
 
 - Propietario
@@ -174,62 +162,34 @@ Responsabilidades:
 
 ---
 
-# `src/common`
+# `src/backend/common`
 
 Elementos reutilizables por todos los módulos.
 
 ```text
 common/
-│
-├── guards/
 ├── interceptors/
 ├── filters/
-├── decorators/
-├── middleware/
 ├── pipes/
 └── utils/
 ```
 
 ## Contenido
 
-### guards/
-
-Protección de rutas..
-
-Ejemplo:
-
-- Validar autenticación.
-
-### decorators/
-
-Decoradores personalizados.
-
-Ejemplo:
-
-- Obtener usuario autenticado.
-
-### middleware/
-
-Procesamiento previo de solicitudes.
-
 ### utils/
-
 Funciones reutilizables.
-
 Ejemplo:
-
 - Formatear fechas.
 - Validaciones comunes.
 
 ---
 
-# `src/config`
+# `src/backend/config`
 
 Configuraciones del proyecto.
 
 ```text
 config/
-│
 ├── env/
 └── database/
 ```
@@ -241,52 +201,45 @@ Aquí se centralizan las configuraciones relacionadas con:
 
 ---
 
-# `src/database`
+# `src/backend/database`
 
 Elementos propios de la base de datos.
 
 ```text
 database/
-│
-├── migrations/
-├── seeders/
-└── entities/
+├── entities/
+├── querys/
+└── seeders/
 ```
 
 ## Contenido
 
-### migrations/
+### entities/
+Modelos que representan las tablas de PostgreSQL.
 
-Cambios versionados de la base de datos.
+
+### querys/
+Se encuentran los archivos .sql con creación e inserción básica de las tablas
 
 ### seeders/
-
 Datos iniciales.
 
 Ejemplos:
-
 - Roles.
 - Usuario administrador.
 - Servicios básicos.
 
-### entities/
-
-Modelos que representan las tablas de PostgreSQL.
-
 ---
 
-# `src/notifications`
+# `src/backend/notifications`
 
 Módulo compartido para notificaciones.
-
 ```text
 notifications/
-│
 └── templates/
 ```
 
 Pensado para implementar el patrón **Observer**.
-
 Podrá encargarse de:
 
 - Confirmaciones.
@@ -299,26 +252,11 @@ Podrá encargarse de:
 
 ```text
 test/
-│
 ├── unit/
 └── integration/
 ```
 
 Separar pruebas desde el inicio facilita mantener calidad durante el desarrollo.
-
----
-
-# Carpeta `database` (raíz)
-
-```text
-database/
-│
-└── backups/
-```
-
-Espacio reservado para respaldos locales durante el desarrollo.
-
-No debería subirse a Git.
 
 ---
 
@@ -328,7 +266,6 @@ Documentación del proyecto.
 
 ```text
 docs/
-│
 ├── arquitectura/
 ├── api/
 ├── diagramas/
@@ -353,33 +290,7 @@ Documentación de endpoints.
 - Flujo de citas.
 
 ### decisiones/
-
 Registro breve de decisiones técnicas importantes.
-
----
-
-# Organización del trabajo del equipo
-
-## Integrante 1
-
-- Auth
-- Users
-- Roles
-
-## Integrante 2
-
-- Pets
-- Appointments
-
-## Integrante 3
-
-- Veterinarians
-- Groomers
-- Walkers
-- Services
-- Notifications
-
-Los elementos de `common` pueden modificarse entre todos cuando sea necesario.
 
 ---
 
