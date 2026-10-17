@@ -31,22 +31,24 @@ crm-veterinario/
 
 # Carpeta `src`
 
-Contiene todo el código fuente del backend.
+Contiene todo el código fuente del backend y frontend.
 
 ```text
 src/
-├── modules/
-├── common/
-├── config/
-├── database/
-├── notifications/
-└── main.ts
+├── backend/
+|   ├── common/ 
+|   ├── config/ 
+|   ├── database/ 
+|   ├── modules/ 
+|   └── notifications/
+└── frontend/
+    └── *todo lo relacionado a VUE (WIP)*
 ```
 
 ---
 
 # Carpeta `src/frontend`
-Se encuentran las carpetas relacionadas al manejo de React y sus dependencias.
+Se encuentran las carpetas relacionadas al manejo de VUE y sus dependencias.
 
 
 # `src/backend/modules`
