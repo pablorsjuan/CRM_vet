@@ -1,5 +1,9 @@
 # Contexto: 
-Es un CRM Veterinario que permita tener diferentes roles dentro del programa, donde cada quien tendrá un apartado especial donde podrá trabajar en base a...
+Es un CRM Veterinario que permita tener diferentes roles dentro del programa, donde cada quien tendrá un apartado especial donde podrá trabajar en base a su rol, dando un servicio especializado según su rol, por ejemplo:
+-Los usuarios, podrán registrarse, inscribir a sus mascotas, agendar citas de peluquería, paseo o veterinaria, pero además, podrán ver las historías clínicas y los resultados de la peluquería
+-Los veterinarios, así como los peluqueros y los paseadores, podrán ver sus citas pendientes que fueron agendadas previamente por los usuarios
+-Los veterinarios podrán crear una historia clínica básica que se guardará en la base de datos, y que los usuarios podrán acceder a ella para recordar cómo le fue en la consulta.
+**nota:** La peluqueria no tiene muchas funciones ya que las imágenes deben subirse a una plataforma espcial, cuyas funcionalidades en el corto plazo, no podrán ser implementadas 
 
 # Requerimientos funcionales:
 |ID|	Nombre|	Descripción|
