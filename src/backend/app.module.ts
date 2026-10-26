@@ -9,6 +9,10 @@ import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
 import { PetsModule } from './modules/pets/pets.module';
 
+
+import { databaseConfig } from './database/database.config';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,17 +23,9 @@ import { PetsModule } from './modules/pets/pets.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.getOrThrow<string>('DB_HOST'),
-        port: Number(configService.getOrThrow<string>('DB_PORT')),
-        username: configService.getOrThrow<string>('DB_USERNAME'),
-        password: configService.getOrThrow<string>('DB_PASSWORD'),
-        database: configService.getOrThrow<string>('DB_DATABASE'),
-        autoLoadEntities: true,
-        synchronize: false,
-      }),
+      useFactory: databaseConfig,
     }),
+
     UsersModule,
     PetsModule,
   ],
