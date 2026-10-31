@@ -1,0 +1,36 @@
+:root {
+  /* Colores principales */
+  --color-primary: #0f766e;
+  --color-secondary: #0e5351;
+  --color-accent: #ccfbf1;
+  --color-gradient-left: #9cf5f0;
+  --color-gradient-right: #f0fdfa;
+  --color-main-button: #0f766e;
+  --color-main-button-hover: #0e5351;
+
+
+  /* Fondos y superficies */
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+
+  /* Textos */
+  --color-text: #243047;
+  --color-text-muted: #64748b;
+
+  /* Estados */
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+
+  
+  /* Tipografía */
+  --font-primary: Arial, sans-serif;
+  --font-heading: Arial, sans-serif;
+
+  /* Tamaños de texto */
+  --font-size-base: 18px;
+  --font-size-title: clamp(36px, 5vw, 58px);
+
+  /* Bordes y espacios */
+  --border-radius: 8px;
+  --spacing-base: 16px;
+}
