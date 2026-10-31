@@ -16,7 +16,6 @@ Es un CRM Veterinario que permita tener diferentes roles dentro del programa, do
 |RF-006	|Registro de peluquero.	|El sistema deberá permitir al peluquero registrarse con nombre, correo e identificación.|
 |RF-007	|Registro de paseador canino.	|El sistema deberá permitir al paseador registrarse con nombre, correo e identificación.|
 |RF-008	|Visualización de pendientes.	|El sistema deberá permitir al trabajador ver sus citas pendientes.|
-|RF-009	|Evidencia de peluquería.	|El sistema deberá permitir subir imágenes para comprobar el antes y después de la peluquería.|
 |RF-010	|Inicio de Sesión.	|El sistema deberá permitir que solo los usuarios registrados puedan iniciar sesión con usuario y contraseña.|
 |RF-011	|Gestión de Roles.	|El sistema deberá identificar el rol del usuario y mostrar las funcionalidades disponibles/habilitadas que le correspondan.|
 |RF-012	|Actualización de perfil.	|El sistema deberá permitir que los usuarios actualicen su información personal y datos de contacto.|

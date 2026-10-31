@@ -1,108 +1,3 @@
-```vue
-<template>
-  <main class="landing-page">
-    <nav class="navbar">
-      <div class="logo">🐾 CRM Vet</div>
-
-      <div class="nav-buttons">
-        <router-link to="/login" class="btn btn-outline">
-          Iniciar sesión
-        </router-link>
-
-        <router-link :to="{ name: 'sign_up' }" class="btn btn-primary">
-          Registrarse
-        </router-link>
-      </div>
-    </nav>
-
-    <section class="hero">
-      <div class="hero-content">
-        <span class="badge">🐶 Cuidamos de quienes más quieres</span>
-
-        <h1>
-          Bienvenido a <span>CRM Vet</span>
-        </h1>
-
-        <p>
-          Una plataforma para el manejo de mascotas.
-          Organiza su información, administra sus cuidados
-          y mantén todo lo importante en un solo lugar.
-        </p>
-
-        <div class="hero-buttons">
-          <router-link :to="{ name: 'sign_up' }" class="btn btn-primary">
-            Comenzar ahora →
-          </router-link>
-
-          <a href="#beneficios" class="btn btn-outline">
-            Conocer más
-          </a>
-        </div>
-      </div>
-
-      <div class="hero-image">
-        <div class="paw-icon">🐾</div>
-        <div class="pet-emoji">🐕</div>
-        <div class="floating-card">
-          <span>❤️</span>
-          <div>
-            <strong>Su bienestar importa</strong>
-            <small>Todo para tus mascotas</small>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="beneficios" class="benefits">
-      <h2>Todo lo que necesitas en un solo lugar</h2>
-      <p class="section-description">
-        Herramientas para facilitar el cuidado y la administración
-        de tus mascotas.
-      </p>
-
-      <div class="benefit-cards">
-        <article class="card">
-          <div class="card-icon">🐕</div>
-          <h3>Gestión de mascotas</h3>
-          <p>
-            Organiza la información y los datos importantes
-            de cada mascota.
-          </p>
-        </article>
-
-        <article class="card">
-          <div class="card-icon">🩺</div>
-          <h3>Atención veterinaria</h3>
-          <p>
-            Facilita la administración de servicios y cuidados
-            veterinarios.
-          </p>
-        </article>
-
-        <article class="card">
-          <div class="card-icon">📅</div>
-          <h3>Gestión de servicios</h3>
-          <p>
-            Mantén organizadas las citas y los servicios
-            relacionados con tus mascotas.
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <p>© 2026 CRM Vet · El bienestar de tus mascotas es nuestra prioridad.</p>
-    </footer>
-  </main>
-</template>
-
-<script>
-export default {
-  name: 'LandingPage'
-}
-</script>
-
-<style scoped>
 .landing-page {
   min-height: 100vh;
   color: #243047;
@@ -147,10 +42,9 @@ export default {
   background: #0f766e;
 }
 
- /*FIXME: El botón iniciar sesión solo cambia de color, mientras el otro sube, debo hacer que queden al mismo estilo */
 .btn-primary:hover {
-  background: #115e59;
-  transform: translateY(-2px);
+  background: #0e5351;
+  transform: translateY(-4px);
 }
 
 .btn-outline {
@@ -159,8 +53,9 @@ export default {
   background: transparent;
 }
 
-.btn-outline:hover { /*FIXME: */
+.btn-outline:hover { 
   background: #ccfbf1;
+  transform: translateY(-4px);
 }
 
 /* Sección principal */
@@ -170,7 +65,7 @@ export default {
   justify-content: space-between;
   gap: 50px;
   padding: 80px 10%;
-  background: linear-gradient(135deg, #9cf5f0, #f0fdfa);
+  background: linear-gradient(135deg, var(--color-gradient-left), var(--color-gradient-right));
 }
 
 .hero-content {
@@ -254,6 +149,12 @@ export default {
 .floating-card small {
   margin-top: 5px;
   color: #64748b;
+}
+
+.floating-card :hover{
+  /* transform: scale(2.0) ; */
+  transform: translateY(-5px);
+  transition: transform 0.2s ease;
 }
 
 /* Beneficios */
@@ -375,5 +276,3 @@ export default {
     font-size: 26px;
   }
 }
-</style>
-```

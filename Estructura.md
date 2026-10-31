@@ -304,3 +304,9 @@ Registro breve de decisiones técnicas importantes.
 - Las entidades de PostgreSQL permanecen agrupadas en `database`.
 - La documentación evoluciona junto con el proyecto dentro de `docs`.
 - La estructura debe mantenerse simple para priorizar la velocidad de desarrollo durante las 7–8 semanas del MVP.
+
+<!-- FIXME: sacar frontend del crm y crear una carpeta aparte, puede dar muchos problemas con git -->
+<!-- FIXME: Borra carpeta env, dejar solo el archivito -->
+<!-- FIXME: dejar todo en una rama -->
+<!-- FIXME: crear una rama fix sacando el frontend y los gitkeep de la rama dev, mis compañeros suben las features a una rama dev y hacen pull request la main -->
+<!-- FIXME: node mailer para los correos-->
