@@ -8,6 +8,7 @@ import Vet_dashboard from '@/Views/Vet_dashboard.vue'
 import Groomer_dashboard from '@/Views/Groomer_dashboard.vue'
 import Walker_dashboard from '@/Views/Walker_dashboard.vue'
 import Forgot_password from '@/Views/Forgot_password.vue'
+import User_pet from '@/Views/User_pet.vue'
 
 const routes = [
   {
@@ -49,6 +50,11 @@ const routes = [
     path: '/forgot_password',
     name: 'forgot_password',
     component: Forgot_password
+  },
+  {
+    path: '/user_pet',
+    name: 'user_pet',
+    component: User_pet
   }
 ]
 

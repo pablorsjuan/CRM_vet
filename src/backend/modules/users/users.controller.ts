@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 
 import { UsersService } from './users.service';
@@ -28,6 +29,11 @@ export class UsersController {
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('search')
+  searchOwners(@Query('query') query: string) {
+    return this.usersService.searchOwnersWithPets(query);
   }
 
   @Get(':id')
