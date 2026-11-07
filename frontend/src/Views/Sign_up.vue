@@ -28,7 +28,7 @@
           id="signup-celular"
           label="Celular"
           type="tel"
-          placeholder="Ingresa tu número de celular"
+          placeholder="+57 123456789"
           autocomplete="tel"
         />
 

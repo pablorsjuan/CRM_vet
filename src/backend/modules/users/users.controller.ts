@@ -8,6 +8,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 
 import {
@@ -51,6 +52,11 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Listado de usuarios obtenido correctamente.' })
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('search')
+  searchOwners(@Query('query') query: string) {
+    return this.usersService.searchOwnersWithPets(query);
   }
 
   @Get(':id')

@@ -2,7 +2,10 @@
 <template>
   <main class="landing-page">
     <nav class="navbar">
-      <div class="logo">🐾 CRM Vet</div>
+      <div class="logo">
+        <span class="logo__emoji" aria-hidden="true">🐾</span>
+        CRM Vet
+      </div>
 
       <div class="nav-buttons">
         <router-link to="/login" class="btn btn-outline">
@@ -17,7 +20,10 @@
 
     <section class="hero">
       <div class="hero-content">
-        <span class="badge">🐶 Cuidamos de quienes más quieres</span>
+        <span class="badge">
+          <span aria-hidden="true">🐶</span>
+          Cuidamos de quienes más quieres
+        </span>
 
         <h1>
           Bienvenido a <span>CRM Vet</span>
@@ -41,9 +47,9 @@
       </div>
 
       <div class="hero-image">
-        <div class="pet-emoji">🐕</div>
+        <div class="pet-emoji" aria-hidden="true">🐕</div>
         <div class="floating-card">
-          <span>❤️</span>
+          <span class="floating-card__emoji" aria-hidden="true">❤️</span>
           <div>
             <strong>Su bienestar importa</strong>
             <small>Todo para tus mascotas</small>
@@ -61,7 +67,7 @@
 
       <div class="benefit-cards">
         <article class="card">
-          <div class="card-icon">🐕</div>
+          <div class="card-icon" aria-hidden="true">🐕</div>
           <h3>Gestión de mascotas</h3>
           <p>
             Organiza la información y los datos importantes
@@ -70,7 +76,7 @@
         </article>
 
         <article class="card">
-          <div class="card-icon">🩺</div>
+          <div class="card-icon" aria-hidden="true">🩺</div>
           <h3>Atención veterinaria</h3>
           <p>
             Facilita la administración de servicios y cuidados
@@ -79,7 +85,7 @@
         </article>
 
         <article class="card">
-          <div class="card-icon">📅</div>
+          <div class="card-icon" aria-hidden="true">📅</div>
           <h3>Gestión de servicios</h3>
           <p>
             Mantén organizadas las citas y los servicios

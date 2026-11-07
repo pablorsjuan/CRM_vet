@@ -29,6 +29,7 @@
   /* Tamaños de texto */
   --font-size-base: 18px;
   --font-size-title: clamp(36px, 5vw, 58px);
+  --emoji-size: 3rem;
 
   /* Bordes y espacios */
   --border-radius: 8px;
