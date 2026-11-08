@@ -31,11 +31,12 @@ export class LoggingInterceptor implements NestInterceptor {
           const linea = `${method} ${originalUrl} - ${duracion}ms`;
 
           if (duracion > LoggingInterceptor.UMBRAL_LENTO_MS) {
-            this.logger.warn(`${linea} (supera los 3s de RNF-009)`);
+            this.logger.warn(`${linea} (supera los 3s de RNF-008)`);
           } else {
             this.logger.log(linea);
           }
         },
+        // Los errores ya los registran los filtros; aquí no se duplican.
       }),
     );
   }

@@ -10,6 +10,7 @@ import { QueryFailedError } from 'typeorm';
 
 import { ErrorResponse } from './error-response.interface';
 
+/** Forma mínima del error que entrega el driver `pg`. */
 interface PgError {
   code?: string;
   detail?: string;
@@ -18,12 +19,17 @@ interface PgError {
 }
 
 /**
- * Traduce los errores de PostgreSQL (QueryFailedError de TypeORM)
+ * Traduce los errores de PostgreSQL (QueryFailedError de TypeORM) a
+ * respuestas HTTP comprensibles, sin filtrar SQL, nombres de tablas ni
+ * valores internos al cliente.
+ *
+ * Referencia de códigos: https://www.postgresql.org/docs/current/errcodes-appendix.html
  */
 @Catch(QueryFailedError)
 export class DatabaseExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(DatabaseExceptionFilter.name);
 
+  /** Nombres amigables de las columnas únicas del esquema. */
   private readonly camposUnicos: Record<string, string> = {
     usuario: 'El nombre de usuario',
     email: 'El correo electrónico',
@@ -39,6 +45,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     const pgError = this.getPgError(exception);
     const { status, error, message } = this.mapear(pgError);
 
+    // El detalle técnico se queda en el log del servidor, nunca en la respuesta.
     this.logger.error(
       `${request.method} ${request.originalUrl} -> ${status} ` +
         `[pg:${pgError.code ?? 'desconocido'}] ${pgError.detail ?? exception.message}`,
@@ -57,7 +64,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
   }
 
   private getPgError(exception: QueryFailedError): PgError {
-
+    // TypeORM guarda el error original del driver en `driverError`.
     return (exception as unknown as { driverError?: PgError }).driverError ??
       (exception as unknown as PgError);
   }
@@ -102,8 +109,11 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
           message: 'Uno de los valores enviados no cumple las reglas permitidas',
         };
 
+      // invalid_text_representation (ej. enum o número con formato inválido)
       case '22P02':
+      // invalid_datetime_format
       case '22007':
+      // datetime_field_overflow
       case '22008':
         return {
           status: HttpStatus.BAD_REQUEST,
@@ -111,6 +121,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
           message: 'Alguno de los datos enviados tiene un formato inválido',
         };
 
+      // string_data_right_truncation
       case '22001':
         return {
           status: HttpStatus.BAD_REQUEST,
@@ -127,6 +138,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
         };
     }
   }
+
+  /** Obtiene la columna duplicada a partir de `Key (email)=(...) already exists.` */
   private campoDuplicado(pg: PgError): string {
     const columna = /Key \(([^)]+)\)=/.exec(pg.detail ?? '')?.[1];
 

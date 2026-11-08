@@ -10,6 +10,10 @@ import { catchError, timeout } from 'rxjs/operators';
 
 /**
  * Corta las peticiones que tardan demasiado para no dejar conexiones
+ * colgadas (RNF-008 y RNF-004). Responde 408 Request Timeout.
+ *
+ * El límite es holgado a propósito (10 s): el objetivo de 3 s de RNF-008
+ * es un promedio que vigila el LoggingInterceptor, no un corte duro.
  */
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {

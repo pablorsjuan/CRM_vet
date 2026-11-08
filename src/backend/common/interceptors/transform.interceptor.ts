@@ -8,7 +8,6 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-/** Formato único de respuesta exitosa de la API. */
 export interface SuccessResponse<T> {
   success: true;
   data: T;
@@ -17,8 +16,7 @@ export interface SuccessResponse<T> {
 
 /**
  * Envuelve toda respuesta exitosa en { success, data, timestamp }.
- * Es el espejo de `ErrorResponse` (filters): el frontend siempre recibe
- * una estructura predecible, tanto en éxito como en error.
+ * Es el espejo de `ErrorResponse` (filters):
  */
 @Injectable()
 export class TransformInterceptor<T>

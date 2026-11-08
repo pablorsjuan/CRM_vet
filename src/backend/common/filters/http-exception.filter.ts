@@ -10,6 +10,10 @@ import type { Request, Response } from 'express';
 
 import { ErrorResponse } from './error-response.interface';
 
+/**
+ * Captura todas las HttpException (BadRequest, Unauthorized, Forbidden,
+ * NotFound, Conflict, etc.) y las devuelve con el formato estándar.
+ */
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -25,6 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let message: string | string[] = exception.message;
     let error: string = HttpStatus[status] ?? 'Error';
 
+    // getResponse() puede ser un string o un objeto { message, error, statusCode }
     if (typeof exceptionResponse === 'string') {
       message = exceptionResponse;
     } else if (typeof exceptionResponse === 'object' && exceptionResponse) {

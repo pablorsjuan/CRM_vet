@@ -1,17 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { DatabaseExceptionFilter } from './common/filters/database-exception.filter';
+import {
+  AllExceptionsFilter,
+  HttpExceptionFilter,
+  DatabaseExceptionFilter,
+} from './common/filters';
+import {
+  LoggingInterceptor,
+  TimeoutInterceptor,
+  TransformInterceptor,
+} from './common/interceptors';
+import { SanitizeBodyPipe } from './common/pipes';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({
-    origin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:8080',
-  });
-
 
   app.useGlobalFilters(
     new AllExceptionsFilter(),
@@ -19,7 +22,14 @@ async function bootstrap() {
     new DatabaseExceptionFilter(),
   );
 
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TimeoutInterceptor(),
+    new TransformInterceptor(),
+  );
+
   app.useGlobalPipes(
+    new SanitizeBodyPipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -27,18 +37,7 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-  .setTitle('CRM Veterinario API')
-  .setDescription('Documentación de los endpoints del CRM Veterinario')
-  .setVersion('1.0')
-  .addTag('users', 'Gestión de usuarios')
-  .addTag('pets', 'Gestión de mascotas')
-  .build();
-
-  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-
-  SwaggerModule.setup('api', app, swaggerDocument);
-
   await app.listen(process.env.PORT ?? 3000);
 }
+
 bootstrap();
