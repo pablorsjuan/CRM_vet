@@ -39,6 +39,15 @@ export interface OwnerPetSearchResult {
   >>;
 }
 
+function isDatabaseError(error: unknown): error is { code: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  );
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -124,12 +133,13 @@ export class UsersService {
           }
 
           // 3. Devolver datos sin contraseña
-          const { contrasena: _, ...resultado } = savedUser;
+          const resultado = { ...savedUser };
+          delete (resultado as Partial<User>).contrasena;
           return resultado;
         },
       );
     } catch (error) {
-      if (error.code === '23505') {
+      if (isDatabaseError(error) && error.code === '23505') {
         throw new ConflictException(
           'El usuario, correo o matrícula profesional ya existe',
         );
@@ -254,7 +264,7 @@ export class UsersService {
       // 6. Consultar nuevamente sin incluir contraseña
       return await this.findOne(id);
     } catch (error) {
-      if (error.code === '23505') {
+      if (isDatabaseError(error) && error.code === '23505') {
         throw new ConflictException(
           'El nombre de usuario o correo ya está registrado',
         );
@@ -300,7 +310,7 @@ export class UsersService {
         message: `Usuario ${id} eliminado correctamente`,
       };
     } catch (error) {
-      if (error.code === '23503') {
+      if (isDatabaseError(error) && error.code === '23503') {
         throw new BadRequestException(
           'No se puede eliminar el usuario porque tiene registros asociados',
         );
