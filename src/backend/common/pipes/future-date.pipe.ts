@@ -5,7 +5,7 @@ import {
   PipeTransform,
 } from '@nestjs/common';
 
-export const ANTICIPACION_MINIMA_CITA_MINUTOS = 60;
+import { ANTICIPACION_MINIMA_CITA_MINUTOS } from '../utils';
 
 /**
  * Valida que un valor sea una fecha/hora válida y que esté en el futuro.
