@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,10 +7,11 @@ import { AppService } from './app.service';
 
 import { UsersModule } from './modules/users/users.module';
 import { PetsModule } from './modules/pets/pets.module';
-
+import { AuthModule } from './modules/auth/auth.module';
+import { ClinicalHistoriesModule } from './modules/clinical-histories/clinical-histories.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
 
 import { databaseConfig } from './database/database.config';
-
 
 @Module({
   imports: [
@@ -28,9 +28,11 @@ import { databaseConfig } from './database/database.config';
 
     UsersModule,
     PetsModule,
+    AuthModule,
+    ClinicalHistoriesModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

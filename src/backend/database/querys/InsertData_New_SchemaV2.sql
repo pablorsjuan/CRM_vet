@@ -5,6 +5,7 @@ BEGIN;
 -- 1. INSERTAR USUARIOS
 -- =============================================
 
+-- Las contrasenas de prueba se cargan como hashes bcrypt.
 INSERT INTO usuarios (
     nombre_usuario, sexo, fecha_nacimiento,
     usuario, contrasena, num_celular, email, rol
@@ -12,107 +13,107 @@ INSERT INTO usuarios (
 
 -- ADMINISTRADOR
 ('Administrador del Sistema', 'Masculino', '1990-05-10',
- 'admin.sistema', 'Prueba123*', '3000000000',
+ 'admin.sistema', '$2b$10$ELZn8bNcdUd9IXKwQkTKgeMHHt4aD/RjgKQiy7eY1iVOpSUT6iku2', '3000000000',
  'admin@example.com', 'administrador'),
 
 -- VETERINARIOS
 ('Andrea Martínez', 'Femenino', '1988-03-15',
- 'vet.andrea', 'Prueba123*', '3001111111',
+ 'vet.andrea', '$2b$10$k4Fsc2JXp3nZ9gL3kKJpk.FhBNe2Z5b7Glo.HPVlRd2lchdKx9FmO', '3001111111',
  'andrea@example.com', 'veterinario'),
 
 ('Carlos Rodríguez', 'Masculino', '1985-07-22',
- 'vet.carlos', 'Prueba123*', '3002222222',
+ 'vet.carlos', '$2b$10$HNLE8oBiiL/rDN97qL5s6OJyu9Tuw9gK3041qT4uwwwZj6/HbF3qO', '3002222222',
  'carlos@example.com', 'veterinario'),
 
 ('Lucía Fernández', 'Femenino', '1992-11-08',
- 'vet.lucia', 'Prueba123*', '3003333333',
+ 'vet.lucia', '$2b$10$psITMtIgDu90dyTXjpnTaevv5ZSimp0qdgovnUD56LiJR7nahyZL6', '3003333333',
  'lucia@example.com', 'veterinario'),
 
 ('Mateo Gómez', 'Masculino', '1990-01-19',
- 'vet.mateo', 'Prueba123*', '3004444444',
+ 'vet.mateo', '$2b$10$uGcN5iRxi0Kz9oN0sac/huUUHoXrJ6mngOufc6X79TU5XYKIHjjmW', '3004444444',
  'mateo@example.com', 'veterinario'),
 
 -- PASEADORES
 ('Sofía Ramírez', 'Femenino', '1995-02-14',
- 'paseador.sofia', 'Prueba123*', '3011111111',
+ 'paseador.sofia', '$2b$10$QBoqs5IsGXmg3ZHLJXQ/J.31sJEZiZH27Wj6BkP05U..iPiDcY6QG', '3011111111',
  'sofia@example.com', 'paseador'),
 
 ('Diego Torres', 'Masculino', '1993-06-30',
- 'paseador.diego', 'Prueba123*', '3012222222',
+ 'paseador.diego', '$2b$10$0ILx8DDs8U6/kjtgoITaOeL6Q7ccG1TMucSIZOppzCZPQv/AHCEda', '3012222222',
  'diego@example.com', 'paseador'),
 
 ('Valentina Castro', 'Femenino', '1998-09-12',
- 'paseador.valentina', 'Prueba123*', '3013333333',
+ 'paseador.valentina', '$2b$10$cABc/SFR0t81MYv441Jbgu7n.jHk.oQSpHV7JRjmw4cPw0F8jHy.e', '3013333333',
  'valentina@example.com', 'paseador'),
 
 ('Julián Herrera', 'Masculino', '1994-12-05',
- 'paseador.julian', 'Prueba123*', '3014444444',
+ 'paseador.julian', '$2b$10$BXobCoSCbNywKTdjyG2ctuQJlVoMJEnMO3HS01Pmf.An7DBwLkKPS', '3014444444',
  'julian@example.com', 'paseador'),
 
 -- PELUQUEROS
 ('Camila Vargas', 'Femenino', '1991-04-20',
- 'peluquero.camila', 'Prueba123*', '3021111111',
+ 'peluquero.camila', '$2b$10$.W/E7pphklAmuu2emx6MMuZb5TCEH8Oc1j5l2V1gOvZi/fWll.1x6', '3021111111',
  'camila@example.com', 'peluquero'),
 
 ('Andrés Moreno', 'Masculino', '1989-08-17',
- 'peluquero.andres', 'Prueba123*', '3022222222',
+ 'peluquero.andres', '$2b$10$Q0dKpd7s0fNrkdt8ONVRIOU/iYqUHiwWKVmqsVDOahXaDGlc51LZm', '3022222222',
  'andres@example.com', 'peluquero'),
 
 ('Laura Jiménez', 'Femenino', '1996-10-25',
- 'peluquero.laura', 'Prueba123*', '3023333333',
+ 'peluquero.laura', '$2b$10$aJKnrawgoALSsk7wyLtcy.vg6AGFyn83bRiqGyGlFqaznC2.zijJu', '3023333333',
  'laura@example.com', 'peluquero'),
 
 ('Miguel Sánchez', 'Masculino', '1987-12-11',
- 'peluquero.miguel', 'Prueba123*', '3024444444',
+ 'peluquero.miguel', '$2b$10$gLrlM2Y4woTZIJeKkdS0C.pwhI0qPDeOJxb6VD8btWGYcbM9hlUhK', '3024444444',
  'miguel@example.com', 'peluquero'),
 
 -- DUEÑOS
 ('Ana López', 'Femenino', '1995-01-10',
- 'dueno.ana', 'Prueba123*', '3101111111',
+ 'dueno.ana', '$2b$10$sNiMzrnO2OI65H0JYcur6.xmydvoY4fpCByNqdHgm1sqek.mp4Gdm', '3101111111',
  'ana@example.com', 'dueno'),
 
 ('Bruno Pérez', 'Masculino', '1992-03-21',
- 'dueno.bruno', 'Prueba123*', '3102222222',
+ 'dueno.bruno', '$2b$10$TropNnRq066yDKTGeAMKxOBaCEsnmsr0nu7/bo.4xUYkVX.YsRPJm', '3102222222',
  'bruno@example.com', 'dueno'),
 
 ('Carla Díaz', 'Femenino', '1990-05-16',
- 'dueno.carla', 'Prueba123*', '3103333333',
+ 'dueno.carla', '$2b$10$J64WWO/x0jTMLVB.4IDMmujcjcjbsm1q0Qwo4AVOfsnRlynoxy3XC', '3103333333',
  'carla@example.com', 'dueno'),
 
 ('Daniel Ruiz', 'Masculino', '1988-07-09',
- 'dueno.daniel', 'Prueba123*', '3104444444',
+ 'dueno.daniel', '$2b$10$9OAdegT0wwtbfiQ31NU.s.m6NyTes9ebQcK.dTud3c56Itqlw0n..', '3104444444',
  'daniel@example.com', 'dueno'),
 
 ('Elena Morales', 'Femenino', '1994-09-28',
- 'dueno.elena', 'Prueba123*', '3111111111',
+ 'dueno.elena', '$2b$10$vmn2RKmvtHGeQmqHdmgv7.2.WPYahLFwmxcgScKdsonClrusvfUkS', '3111111111',
  'elena@example.com', 'dueno'),
 
 ('Felipe Rojas', 'Masculino', '1991-11-13',
- 'dueno.felipe', 'Prueba123*', '3112222222',
+ 'dueno.felipe', '$2b$10$qEgt61wwBra01OEfggFJFe0.pkebuuOy48k.WLfsdBO6Lm5SsEAXC', '3112222222',
  'felipe@example.com', 'dueno'),
 
 ('Gabriela Ortiz', 'Femenino', '1997-02-04',
- 'dueno.gabriela', 'Prueba123*', '3113333333',
+ 'dueno.gabriela', '$2b$10$t5.Yacpam0jkMWHYE9sv9uiZt373byHJ0A1t703KN3M/tHbNiCTbO', '3113333333',
  'gabriela@example.com', 'dueno'),
 
 ('Hugo Medina', 'Masculino', '1986-04-18',
- 'dueno.hugo', 'Prueba123*', '3114444444',
+ 'dueno.hugo', '$2b$10$mfaoLmy3Wmb8F8YR5h.O2OJWBYPGOTsmQJ1lIm6V.TJ0Dz6/i/z3i', '3114444444',
  'hugo@example.com', 'dueno'),
 
 ('Isabel Guerrero', 'Femenino', '1993-06-23',
- 'dueno.isabel', 'Prueba123*', '3121111111',
+ 'dueno.isabel', '$2b$10$1c0uXGM9nXqQqKC90VN15e2k8GD9EutXqIgYI98YKbcsMalcH5O96', '3121111111',
  'isabel@example.com', 'dueno'),
 
 ('Javier Castillo', 'Masculino', '1989-08-14',
- 'dueno.javier', 'Prueba123*', '3122222222',
+ 'dueno.javier', '$2b$10$IXQU5l/idQOpXN3riQDdGur0arzyXkEgSuLnhUkNHbmYNN2EGw3jK', '3122222222',
  'javier@example.com', 'dueno'),
 
 ('Karen Silva', 'Femenino', '1996-10-07',
- 'dueno.karen', 'Prueba123*', '3123333333',
+ 'dueno.karen', '$2b$10$C29wbpqHThsbNrLgOeQKIOL0NHbg12JFrm5rlKblMvqVIwT1ujDlW', '3123333333',
  'karen@example.com', 'dueno'),
 
 ('Luis Ramírez', 'Masculino', '1990-12-29',
- 'dueno.luis', 'Prueba123*', '3124444444',
+ 'dueno.luis', '$2b$10$FpN.lD2QNOVo5VfT4ciOr.HcgPMWKXrvDzy6YilSitdnXKAIfdiAa', '3124444444',
  'luis@example.com', 'dueno');
 
 

@@ -5,9 +5,7 @@ import {
   MaxLength,
   IsOptional,
   IsDateString,
-  IsInt,
   IsNumberString,
-  Min,
   IsIn,
 } from 'class-validator';
 
@@ -89,14 +87,4 @@ export class CreatePetDto {
   @IsOptional()
   @IsString()
   observaciones?: string;
-
-  @ApiProperty({
-    description: 'ID del dueño registrado en el sistema',
-    example: 2,
-    type: Number,
-    minimum: 1,
-  })
-  @IsInt()
-  @Min(1)
-  id_dueno: number;
 }

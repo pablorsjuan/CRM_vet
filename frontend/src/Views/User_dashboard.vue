@@ -165,6 +165,8 @@
     <AppointmentModal
       v-if="isAppointmentModalOpen"
       :pets="visiblePets"
+      :error-message="appointmentError"
+      :is-saving="isSavingAppointment"
       @close="isAppointmentModalOpen = false"
       @submit="submitAppointment"
     />
@@ -187,6 +189,7 @@ import AppointmentModal from '@/components/AppointmentModal.vue'
 import AddPetModal from '@/components/AddPetModal.vue'
 import { logoutUser } from '@/services/authApi'
 import { apiRequest, hasAccessToken } from '@/services/api'
+import { cancelAppointment } from '@/services/appointmentsApi'
 
 export default {
   name: 'UserDashboard',
@@ -220,17 +223,17 @@ export default {
     return {
       activePanel: 'pets',
       isAppointmentModalOpen: false,
+      isSavingAppointment: false,
+      appointmentError: '',
       isPetModalOpen: false,
       apiPets: [],
       apiHistories: [],
+      apiAppointments: [],
       apiUserId: null,
       isLoadingData: false,
       dashboardError: '',
       petSubmissionError: '',
-      createdAppointments: [],
       cancelledAppointmentIds: [],
-      cancelledAppointmentObjects: [],
-      nextAppointmentId: 1,
       profileDraft: {
         username: this.profile.username || '',
         email: this.profile.email || '',
@@ -267,20 +270,30 @@ export default {
       return this.clinicalHistories.length ? this.clinicalHistories : this.apiHistories
     },
     visibleAppointments() {
-      const newAppointments = this.createdAppointments.filter((createdAppointment) => (
-        !this.appointments.some((appointment) => (
-          this.appointmentsMatch(appointment, createdAppointment)
-        ))
-      ))
-      const allAppointments = [...this.appointments, ...newAppointments]
+      const allAppointments = [...this.appointments, ...this.apiAppointments]
+      const uniqueAppointments = allAppointments.filter((appointment, index, list) => {
+        const id = appointment.id_cita || appointment.id
+        return !id || list.findIndex((item) => (
+          String(item.id_cita || item.id) === String(id)
+        )) === index
+      })
 
-      return allAppointments.filter((appointment) => {
+      return uniqueAppointments.filter((appointment) => {
         const id = appointment.id_cita || appointment.id
         if (id) {
+          const status = (appointment.estado || appointment.status || '').toLocaleLowerCase()
           return !this.cancelledAppointmentIds.includes(String(id))
+            && ![
+              'cancelada',
+              'cancelado',
+              'completada',
+              'completado',
+              'realizada',
+              'realizado'
+            ].includes(status)
         }
 
-        return !this.cancelledAppointmentObjects.includes(appointment)
+        return true
       })
     }
   },
@@ -312,16 +325,20 @@ export default {
       this.isLoadingData = true
       this.dashboardError = ''
       try {
-        const [profile, pets, histories] = await Promise.all([
+        const [profile, pets, histories, appointments] = await Promise.all([
           apiRequest('/auth/profile'),
           apiRequest('/pets/mine'),
-          apiRequest('/clinical-histories/mine')
+          apiRequest('/clinical-histories/mine'),
+          apiRequest('/appointments/mine')
         ])
         if (!Array.isArray(pets)) {
           throw new Error('El servidor devolvió una lista de mascotas inválida.')
         }
         if (!Array.isArray(histories)) {
           throw new Error('El servidor devolvió una lista de historias clínicas inválida.')
+        }
+        if (!Array.isArray(appointments)) {
+          throw new Error('El servidor devolvió una lista de citas inválida.')
         }
 
         if (!profile || !Number.isInteger(profile.id_usuario)) {
@@ -331,6 +348,7 @@ export default {
         this.apiUserId = profile.id_usuario
         this.apiPets = pets
         this.apiHistories = histories
+        this.apiAppointments = appointments
         this.profileDraft = {
           username: profile.usuario || '',
           email: profile.email || '',
@@ -423,6 +441,7 @@ export default {
       }
     },
     openAppointmentModal() {
+      this.appointmentError = ''
       this.isAppointmentModalOpen = true
       this.$emit('add-appointment')
     },
@@ -464,39 +483,45 @@ export default {
       })
       this.passwordDraft = { code: '', password: '' }
     },
-    submitAppointment(appointment) {
-      const createdAppointment = {
-        ...appointment,
-        id_cita: `local-${Date.now()}-${this.nextAppointmentId}`
+    async submitAppointment(appointment) {
+      this.appointmentError = ''
+      this.isSavingAppointment = true
+      try {
+        const createdAppointment = await apiRequest('/appointments', {
+          method: 'POST',
+          body: appointment
+        })
+        this.apiAppointments = [...this.apiAppointments, createdAppointment]
+        this.$emit('appointment-created', createdAppointment)
+        this.isAppointmentModalOpen = false
+      } catch (error) {
+        this.appointmentError = error.message
+      } finally {
+        this.isSavingAppointment = false
       }
-      this.nextAppointmentId += 1
-      this.createdAppointments.push(createdAppointment)
-      this.$emit('appointment-created', createdAppointment)
-      this.isAppointmentModalOpen = false
     },
-    appointmentsMatch(first, second) {
-      return first.fecha === second.fecha
-        && (first.tipo_servicio || first.servicio) === second.tipo_servicio
-        && (first.id_mascota || first.nombre_mascota || first.mascota)
-          === (second.id_mascota || second.nombre_mascota)
-    },
-    cancelAppointment(appointment) {
+    async cancelAppointment(appointment) {
       if (!window.confirm('¿Está seguro de cancelar la cita?')) {
         return
       }
 
       const id = appointment.id_cita || appointment.id
-      this.createdAppointments = this.createdAppointments.filter(
-        (item) => !this.appointmentsMatch(item, appointment)
-      )
-
-      if (id) {
-        this.cancelledAppointmentIds.push(String(id))
-      } else {
-        this.cancelledAppointmentObjects.push(appointment)
+      if (!id || !Number.isInteger(Number(id))) {
+        this.dashboardError = 'No se encontró el identificador de la cita.'
+        return
       }
 
-      this.$emit('appointment-cancelled', appointment)
+      this.dashboardError = ''
+      try {
+        await cancelAppointment(id)
+        this.cancelledAppointmentIds.push(String(id))
+        this.apiAppointments = this.apiAppointments.map((item) => (
+          String(item.id_cita) === String(id) ? { ...item, estado: 'cancelada' } : item
+        ))
+        this.$emit('appointment-cancelled', appointment)
+      } catch (error) {
+        this.dashboardError = error.message
+      }
     }
   }
 }

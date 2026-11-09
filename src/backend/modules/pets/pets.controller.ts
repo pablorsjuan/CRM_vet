@@ -8,9 +8,12 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 
 import {
+  ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
@@ -19,8 +22,12 @@ import {
 import { PetsService } from './pets.service';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
+import { AuthenticatedRequest } from '../auth/auth.types';
+import { Roles } from '../auth/roles.decorator';
+import { RolUsuario } from '../../database/entities/user.entity';
 
 @ApiTags('pets')
+@ApiBearerAuth()
 @Controller('pets')
 export class PetsController {
   constructor(
@@ -30,6 +37,7 @@ export class PetsController {
 
   // REGISTRAR MASCOTA
   @Post()
+  @Roles(RolUsuario.DUENO)
   @ApiOperation({ summary: 'Registrar una nueva mascota' })
   @ApiResponse({
     status: 201,
@@ -39,12 +47,27 @@ export class PetsController {
     status: 400,
     description: 'Datos inválidos o el dueño indicado no existe.',
   })
-  create(@Body() createPetDto: CreatePetDto) {
-    return this.petsService.create(createPetDto);
+  create(
+    @Body() createPetDto: CreatePetDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.petsService.createForUser(request.user.sub, createPetDto);
   }
 
-  // CONSULTAR TODAS LAS MASCOTAS
+  @Get('mine')
+  @Roles(RolUsuario.DUENO)
+  @ApiOperation({ summary: 'Obtener las mascotas del usuario autenticado' })
+  findMine(@Req() request: AuthenticatedRequest) {
+    return this.petsService.findForUser(request.user.sub);
+  }
+
   @Get()
+  @Roles(
+    RolUsuario.ADMINISTRADOR,
+    RolUsuario.VETERINARIO,
+    RolUsuario.PASEADOR,
+    RolUsuario.PELUQUERO,
+  )
   @ApiOperation({ summary: 'Obtener todas las mascotas' })
   @ApiResponse({
     status: 200,
@@ -69,7 +92,11 @@ export class PetsController {
     status: 404,
     description: 'Mascota no encontrada.',
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    await this.assertOwnerOrAdministrator(id, request);
     return this.petsService.findOne(id);
   }
 
@@ -88,10 +115,12 @@ export class PetsController {
     status: 404,
     description: 'Mascota o dueño asociado no encontrado.',
   })
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePetDto: UpdatePetDto,
+    @Req() request: AuthenticatedRequest,
   ) {
+    await this.assertOwnerOrAdministrator(id, request);
     return this.petsService.update(id, updatePetDto);
   }
 
@@ -110,7 +139,27 @@ export class PetsController {
     status: 404,
     description: 'Mascota no encontrada.',
   })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    await this.assertOwnerOrAdministrator(id, request);
     return this.petsService.remove(id);
+  }
+
+  private async assertOwnerOrAdministrator(
+    petId: number,
+    request: AuthenticatedRequest,
+  ) {
+    if (request.user.rol === RolUsuario.ADMINISTRADOR) {
+      return;
+    }
+
+    if (
+      request.user.rol !== RolUsuario.DUENO
+      || !(await this.petsService.belongsToUser(petId, request.user.sub))
+    ) {
+      throw new ForbiddenException('No tienes permisos para acceder a esta mascota');
+    }
   }
 }

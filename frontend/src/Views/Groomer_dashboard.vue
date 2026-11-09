@@ -8,10 +8,7 @@
             v-for="panel in panels"
             :key="panel.id"
             class="worker-dashboard__navigation-button"
-            :class="{
-              'worker-dashboard__navigation-button--active': activePanel === panel.id,
-              'worker-dashboard__navigation-button--care': panel.id === 'care'
-            }"
+            :class="{ 'worker-dashboard__navigation-button--active': activePanel === panel.id }"
             type="button"
             :aria-current="activePanel === panel.id ? 'page' : null"
             @click="activePanel = panel.id"
@@ -29,16 +26,20 @@
       </aside>
 
       <section class="worker-dashboard__content" aria-live="polite">
+        <p v-if="isLoadingPets" role="status">Cargando mascotas…</p>
+        <p v-if="loadError" role="alert">{{ loadError }}</p>
         <WorkerPetsSidebar
           v-if="activePanel === 'pets'"
-          :pets="pets"
+          :pets="allPets"
           :appointments="appointments"
           role="groomer"
-          @grooming-result-recorded="$emit('grooming-result-recorded', $event)"
+          @worker-action="openPetCare"
         />
         <WorkerPetsSidebar
           v-else-if="activePanel === 'care'"
+          :pets="allPets"
           :appointments="appointments"
+          :initial-pet="selectedCarePet"
           role="groomer"
           manual-care
           @grooming-result-recorded="$emit('grooming-result-recorded', $event)"
@@ -46,10 +47,11 @@
         <WorkerAppointmentsPanel
           v-else-if="activePanel === 'appointments'"
           :appointments="appointments"
-          :pets="pets"
+          :pets="allPets"
           role="groomer"
           @appointment-created="$emit('appointment-created', $event)"
         />
+        <WorkerProfilePanel v-else-if="activePanel === 'profile'" />
         <template v-else>
           <h1>{{ activePanelTitle }}</h1>
           <p>{{ activePanelDescription }}</p>
@@ -63,14 +65,17 @@
 import UserNavbar from '@/components/UserNavbar.vue'
 import WorkerPetsSidebar from '@/components/WorkerPetsSidebar.vue'
 import WorkerAppointmentsPanel from '@/components/WorkerAppointmentsPanel.vue'
+import WorkerProfilePanel from '@/components/WorkerProfilePanel.vue'
 import { logoutUser } from '@/services/authApi'
+import { apiRequest, hasAccessToken } from '@/services/api'
 
 export default {
   name: 'GroomerDashboard',
   components: {
     UserNavbar,
     WorkerPetsSidebar,
-    WorkerAppointmentsPanel
+    WorkerAppointmentsPanel,
+    WorkerProfilePanel
   },
   props: {
     pets: {
@@ -86,6 +91,10 @@ export default {
   data() {
     return {
       activePanel: 'care',
+      selectedCarePet: null,
+      loadedPets: [],
+      isLoadingPets: false,
+      loadError: '',
       panels: [
         { id: 'care', label: 'Atender cita', title: 'Atender cita' },
         { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
@@ -94,19 +103,43 @@ export default {
       ]
     }
   },
+  created() {
+    this.loadPets()
+  },
   computed: {
+    allPets() {
+      return this.pets.length ? this.pets : this.loadedPets
+    },
     activePanelTitle() {
       return this.panels.find((panel) => panel.id === this.activePanel).title
     },
     activePanelDescription() {
-      if (this.activePanel === 'profile') {
-        return 'La edición del perfil se definirá próximamente.'
-      }
-
       return `La sección de ${this.activePanelTitle.toLowerCase()} se definirá próximamente.`
     }
   },
   methods: {
+    async loadPets() {
+      this.isLoadingPets = true
+      this.loadError = ''
+      try {
+        const pets = await apiRequest('/pets')
+        if (!Array.isArray(pets)) {
+          throw new Error('El servidor devolvió una lista de mascotas inválida.')
+        }
+        this.loadedPets = pets
+      } catch (error) {
+        this.loadError = error.message
+        if (!hasAccessToken()) {
+          this.$router.push('/login')
+        }
+      } finally {
+        this.isLoadingPets = false
+      }
+    },
+    openPetCare(pet) {
+      this.selectedCarePet = pet
+      this.activePanel = 'care'
+    },
     logout() {
       logoutUser()
       this.$router.push('/login')
@@ -162,17 +195,6 @@ export default {
 .worker-dashboard__navigation-button:focus-visible,
 .worker-dashboard__navigation-button--active {
   background: var(--color-accent);
-}
-
-.worker-dashboard__navigation-button--care {
-  background: var(--color-main-button);
-  color: var(--color-surface);
-  font-weight: 600;
-}
-
-.worker-dashboard__navigation-button--care:hover,
-.worker-dashboard__navigation-button--care:focus-visible {
-  background: var(--color-main-button-hover);
 }
 
 .worker-dashboard__navigation-button--logout:hover,

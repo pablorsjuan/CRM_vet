@@ -7,6 +7,7 @@
       :type="type"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
+      :max="max"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       required
@@ -38,6 +39,10 @@ export default {
     autocomplete: {
       type: String,
       default: 'off'
+    },
+    max: {
+      type: String,
+      default: undefined
     },
     modelValue: {
       type: String,

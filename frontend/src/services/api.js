@@ -2,7 +2,7 @@ const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000'
 const AUTH_TOKEN_KEY = 'crm_vet_access_token'
 const AUTH_ROLE_KEY = 'crm_vet_role'
 
-export async function apiRequest(path, { method = 'GET', body } = {}) {
+export async function apiRequest(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' }
   const accessToken = sessionStorage.getItem(AUTH_TOKEN_KEY)
   if (accessToken) {
@@ -17,9 +17,14 @@ export async function apiRequest(path, { method = 'GET', body } = {}) {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body)
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal
     })
-  } catch {
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw error
+    }
+
     throw new Error('No fue posible conectar con el servidor. Intenta nuevamente.')
   }
 

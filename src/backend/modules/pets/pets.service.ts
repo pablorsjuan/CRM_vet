@@ -24,21 +24,23 @@ export class PetsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // CREAR MASCOTA
-  async create(createPetDto: CreatePetDto) {
+  async createForUser(userId: number, createPetDto: CreatePetDto) {
     const savedPet = await this.dataSource.transaction(
       async (manager) => {
         const owner = await manager.findOneBy(Owner, {
-          id_dueno: createPetDto.id_dueno,
+          id_usuario: userId,
         });
 
         if (!owner) {
           throw new BadRequestException(
-            'El dueño indicado no existe',
+            'El usuario autenticado no tiene perfil de dueño',
           );
         }
 
-        const pet = manager.create(Pet, createPetDto);
+        const pet = manager.create(Pet, {
+          ...createPetDto,
+          id_dueno: owner.id_dueno,
+        });
         const saved = await manager.save(Pet, pet);
 
         await manager.increment(
@@ -55,23 +57,28 @@ export class PetsService {
     return this.findOne(savedPet.id_mascota);
   }
 
-  // CONSULTAR TODAS LAS MASCOTAS
-  async findAll() {
-    return this.petsRepository.find({
-      relations: {
-        dueno: true,
-      },
+  async findForUser(userId: number) {
+    const owner = await this.ownersRepository.findOneBy({
+      id_usuario: userId,
     });
+    if (!owner) {
+      throw new NotFoundException('El usuario autenticado no tiene perfil de dueño');
+    }
+
+    return this.petsRepository.find({
+      where: { id_dueno: owner.id_dueno },
+    });
+  }
+
+  async findAll() {
+    return this.petsWithOwnerQuery().getMany();
   }
 
   // CONSULTAR MASCOTA POR ID
   async findOne(id: number) {
-    const pet = await this.petsRepository.findOne({
-      where: { id_mascota: id },
-      relations: {
-        dueno: true,
-      },
-    });
+    const pet = await this.petsWithOwnerQuery()
+      .where('pet.id_mascota = :id', { id })
+      .getOne();
 
     if (!pet) {
       throw new NotFoundException(
@@ -80,6 +87,19 @@ export class PetsService {
     }
 
     return pet;
+  }
+
+  private petsWithOwnerQuery() {
+    return this.petsRepository
+      .createQueryBuilder('pet')
+      .leftJoinAndSelect('pet.dueno', 'dueno')
+      .leftJoin('dueno.usuario', 'ownerUser')
+      .addSelect(['ownerUser.id_usuario', 'ownerUser.nombre_usuario']);
+  }
+
+  async belongsToUser(petId: number, userId: number) {
+    const pet = await this.findOne(petId);
+    return pet.dueno.id_usuario === userId;
   }
 
   // ACTUALIZAR MASCOTA
@@ -95,40 +115,8 @@ export class PetsService {
         );
       }
 
-      const previousOwnerId = pet.id_dueno;
-      const newOwnerId =
-        updatePetDto.id_dueno ?? previousOwnerId;
-
-      if (newOwnerId !== previousOwnerId) {
-        const newOwner = await manager.findOneBy(Owner, {
-          id_dueno: newOwnerId,
-        });
-
-        if (!newOwner) {
-          throw new BadRequestException(
-            'El nuevo dueño indicado no existe',
-          );
-        }
-      }
-
       Object.assign(pet, updatePetDto);
       await manager.save(Pet, pet);
-
-      if (newOwnerId !== previousOwnerId) {
-        await manager.decrement(
-          Owner,
-          { id_dueno: previousOwnerId },
-          'num_mascotas',
-          1,
-        );
-
-        await manager.increment(
-          Owner,
-          { id_dueno: newOwnerId },
-          'num_mascotas',
-          1,
-        );
-      }
     });
 
     return this.findOne(id);

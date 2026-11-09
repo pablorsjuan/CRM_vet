@@ -37,11 +37,62 @@
 
         <label class="appointment-modal__field">
           Tipo de cita
-          <select v-model="appointmentType" required>
+          <select v-model="appointmentType" required :disabled="Boolean(workerRole)">
             <option disabled value="">Selecciona un tipo de cita</option>
-            <option value="Veterinaria">Veterinaria</option>
-            <option value="Peluquería">Peluquería</option>
-            <option value="Paseo">Paseo</option>
+            <option value="veterinaria">Veterinaria</option>
+            <option value="peluqueria">Peluquería</option>
+            <option value="paseo">Paseo</option>
+          </select>
+        </label>
+
+        <label
+          v-if="date && appointmentType && !workerRole"
+          class="appointment-modal__field"
+        >
+          Profesional disponible
+          <select v-model="selectedProfessionalId" required :disabled="availabilityLoading">
+            <option disabled value="">Selecciona un profesional</option>
+            <option
+              v-for="professional in professionals"
+              :key="professional.id_usuario"
+              :value="String(professional.id_usuario)"
+              :disabled="professional.horarios.length === 0"
+            >
+              {{ professional.nombre_usuario }}
+              {{ professional.horarios.length ? '' : '(sin horarios disponibles)' }}
+            </option>
+          </select>
+        </label>
+        <p
+          v-if="workerRole && selectedProfessional"
+          class="appointment-modal__message"
+          role="status"
+        >
+          Profesional asignado: {{ selectedProfessional.nombre_usuario }}
+        </p>
+        <p v-if="availabilityLoading" class="appointment-modal__message" role="status">
+          Consultando horarios disponibles…
+        </p>
+        <p v-if="availabilityError" class="appointment-modal__error" role="alert">
+          {{ availabilityError }}
+        </p>
+        <p
+          v-if="availabilityLoaded && !availabilityLoading && !availableTimes.length"
+          class="appointment-modal__message"
+          role="status"
+        >
+          No hay horarios disponibles para esta fecha y servicio.
+        </p>
+        <label
+          v-if="selectedProfessional && availableTimes.length"
+          class="appointment-modal__field"
+        >
+          Horario disponible
+          <select v-model="selectedTime" required>
+            <option disabled value="">Selecciona un horario</option>
+            <option v-for="time in availableTimes" :key="time" :value="time">
+              {{ time }}
+            </option>
           </select>
         </label>
 
@@ -138,12 +189,33 @@
           }}
         </p>
 
+        <p v-if="errorMessage" class="appointment-modal__error" role="alert">
+          {{ errorMessage }}
+        </p>
+
+        <p
+          v-if="!isSaving && disabledReason"
+          id="appointment-modal-submit-hint"
+          class="appointment-modal__message"
+          role="status"
+        >
+          {{ disabledReason }}
+        </p>
+
         <button
           class="appointment-modal__submit"
           type="submit"
-          :disabled="!petId || appointmentPets.length === 0 || (workerRole && !selectedUser)"
+          :title="disabledReason"
+          :aria-describedby="disabledReason ? 'appointment-modal-submit-hint' : null"
+          :disabled="isSaving
+            || !petId
+            || !selectedTime
+            || !selectedProfessional
+            || availabilityLoading
+            || appointmentPets.length === 0
+            || (workerRole && !selectedUser)"
         >
-          Confirmar cita
+          {{ isSaving ? 'Guardando cita…' : 'Confirmar cita' }}
         </button>
       </form>
     </section>
@@ -152,6 +224,7 @@
 
 <script>
 import { searchOwners } from '@/services/usersApi'
+import { getAppointmentAvailability } from '@/services/appointmentsApi'
 
 export default {
   name: 'AppointmentModal',
@@ -164,6 +237,14 @@ export default {
       type: String,
       default: '',
       validator: (value) => ['', 'vet', 'groomer', 'walker'].includes(value)
+    },
+    errorMessage: {
+      type: String,
+      default: ''
+    },
+    isSaving: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['close', 'submit'],
@@ -172,6 +253,13 @@ export default {
       date: '',
       appointmentType: '',
       petId: '',
+      professionals: [],
+      selectedProfessionalId: '',
+      selectedTime: '',
+      availabilityLoading: false,
+      availabilityLoaded: false,
+      availabilityError: '',
+      availabilityRequestId: 0,
       customerName: '',
       searchResults: [],
       selectedUser: null,
@@ -184,6 +272,41 @@ export default {
     }
   },
   computed: {
+    disabledReason() {
+      if (this.availabilityLoading) {
+        return 'Espera mientras consultamos los horarios disponibles.'
+      }
+      if (!this.date || !this.appointmentType) {
+        return 'Selecciona la fecha y el tipo de cita.'
+      }
+      if (this.availabilityError) {
+        return 'No se pudo consultar la disponibilidad. Revisa el error e intenta de nuevo.'
+      }
+      if (!this.selectedProfessional) {
+        return 'Selecciona un profesional disponible.'
+      }
+      if (!this.selectedTime) {
+        return this.availableTimes.length
+          ? 'Selecciona un horario disponible para habilitar el botón.'
+          : 'No hay horarios disponibles para esta fecha y servicio.'
+      }
+      if (this.workerRole && !this.selectedUser) {
+        return 'Busca y selecciona al usuario propietario.'
+      }
+      if (!this.petId || this.appointmentPets.length === 0) {
+        return 'Selecciona una mascota para la cita.'
+      }
+
+      return ''
+    },
+    selectedProfessional() {
+      return this.professionals.find(
+        (professional) => String(professional.id_usuario) === this.selectedProfessionalId
+      ) || null
+    },
+    availableTimes() {
+      return this.selectedProfessional?.horarios || []
+    },
     appointmentPets() {
       return this.workerRole
         ? (this.selectedUser ? this.selectedUser.mascotas || [] : [])
@@ -191,6 +314,15 @@ export default {
     }
   },
   watch: {
+    date() {
+      this.loadAvailability()
+    },
+    appointmentType() {
+      this.loadAvailability()
+    },
+    selectedProfessionalId() {
+      this.selectedTime = ''
+    },
     customerName(value) {
       if (!this.workerRole) {
         return
@@ -202,6 +334,7 @@ export default {
       this.lookupError = ''
       this.showPetSelector = false
       this.petId = ''
+      this.selectedTime = ''
 
       const query = value.trim()
       if (query.length < 2) {
@@ -216,9 +349,9 @@ export default {
       immediate: true,
       handler(role) {
         const roleService = {
-          vet: 'Veterinaria',
-          groomer: 'Peluquería',
-          walker: 'Paseo'
+          vet: 'veterinaria',
+          groomer: 'peluqueria',
+          walker: 'paseo'
         }
 
         if (roleService[role]) {
@@ -264,6 +397,43 @@ export default {
         }
       }
     },
+    async loadAvailability() {
+      const requestId = this.availabilityRequestId + 1
+      this.availabilityRequestId = requestId
+      this.professionals = []
+      this.selectedProfessionalId = ''
+      this.selectedTime = ''
+      this.availabilityLoaded = false
+      this.availabilityError = ''
+      this.availabilityLoading = false
+      if (!this.date || !this.appointmentType) {
+        return
+      }
+
+      this.availabilityLoading = true
+      try {
+        const professionals = await getAppointmentAvailability(
+          this.date,
+          this.appointmentType
+        )
+        if (requestId !== this.availabilityRequestId) {
+          return
+        }
+        this.professionals = professionals
+        if (this.workerRole && this.professionals.length) {
+          this.selectedProfessionalId = String(this.professionals[0].id_usuario)
+        }
+        this.availabilityLoaded = true
+      } catch (error) {
+        if (requestId === this.availabilityRequestId) {
+          this.availabilityError = error.message
+        }
+      } finally {
+        if (requestId === this.availabilityRequestId) {
+          this.availabilityLoading = false
+        }
+      }
+    },
     selectOwner(owner) {
       this.selectedUser = owner
       this.searchResults = []
@@ -291,15 +461,13 @@ export default {
 
       const appointment = {
         fecha: this.date,
-        tipo_servicio: this.appointmentType,
-        id_mascota: pet.id_mascota,
-        nombre_mascota: pet.nombre_mascota
+        tipo_cita: this.appointmentType,
+        hora_inicio: this.selectedTime,
+        id_mascota: Number(pet.id_mascota)
       }
 
-      if (this.workerRole) {
-        appointment.nombre_usuario = this.selectedUser.nombre_usuario
-        appointment.id_usuario = this.selectedUser.id_usuario
-        appointment.rol_profesional = this.workerRole
+      if (!this.workerRole) {
+        appointment.id_profesional = this.selectedProfessional.id_usuario
       }
 
       this.$emit('submit', appointment)

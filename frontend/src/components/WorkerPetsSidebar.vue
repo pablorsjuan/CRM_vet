@@ -13,7 +13,7 @@
         <PetCard
           :pet="pet"
           :worker-mode="true"
-          @worker-action="beginCare"
+          @worker-action="$emit('worker-action', $event)"
         />
       </li>
     </ul>
@@ -26,11 +26,15 @@
       <h2 id="worker-pets-care-title">
         {{ careTitle }}: {{ careDetails.nombre_mascota || 'Nueva atención' }}
       </h2>
-      <p v-if="!manualCare && relatedAppointments.length" class="worker-pets__appointments">
+      <p v-if="selectedPet && relatedAppointments.length" class="worker-pets__appointments">
         Citas relacionadas:
-        {{ relatedAppointments.map((appointment) => appointment.fecha || 'Sin fecha').join(', ') }}
+        {{
+          relatedAppointments
+            .map((appointment) => `${appointment.tipo_servicio || 'Cita'}: ${appointment.fecha || 'Sin fecha'}`)
+            .join(', ')
+        }}
       </p>
-      <p v-else-if="!manualCare" class="worker-pets__appointments">
+      <p v-else-if="selectedPet" class="worker-pets__appointments">
         No hay una cita asociada a esta mascota en los datos recibidos.
       </p>
 
@@ -40,7 +44,7 @@
       >
         <div v-if="!hasSubmitted" class="worker-pets__fields">
           <label
-            v-if="manualCare && role === 'vet'"
+            v-if="manualCare && pets.length"
             class="worker-pets__field--full"
           >
             Mascota
@@ -55,13 +59,38 @@
               </option>
             </select>
           </label>
+          <dl
+            v-if="manualCare && selectedPet"
+            class="worker-pets__pet-summary worker-pets__field--full"
+          >
+            <div>
+              <dt>Especie</dt>
+              <dd>{{ selectedPet.especie || 'No disponible' }}</dd>
+            </div>
+            <div>
+              <dt>Raza</dt>
+              <dd>{{ selectedPet.raza || 'No disponible' }}</dd>
+            </div>
+            <div>
+              <dt>Sexo</dt>
+              <dd>{{ selectedPet.sexo || 'No disponible' }}</dd>
+            </div>
+            <div>
+              <dt>Peso</dt>
+              <dd>{{ selectedPet.peso ? `${selectedPet.peso} kg` : 'No disponible' }}</dd>
+            </div>
+            <div>
+              <dt>Propietario</dt>
+              <dd>{{ careDetails.nombre_usuario || 'No disponible' }}</dd>
+            </div>
+          </dl>
           <p
             v-if="manualCare && role === 'vet' && pets.length === 0"
             class="worker-pets__field--full"
           >
             No hay mascotas disponibles para registrar una historia clínica.
           </p>
-          <label v-if="role !== 'vet'">
+          <label v-if="role !== 'vet' && (!manualCare || !pets.length)">
             Nombre de la mascota
             <input
               v-model.trim="careDetails.nombre_mascota"
@@ -176,9 +205,18 @@ export default {
     manualCare: {
       type: Boolean,
       default: false
+    },
+    initialPet: {
+      type: Object,
+      default: null
     }
   },
-  emits: ['clinical-history-created', 'grooming-result-recorded', 'walk-completed'],
+  emits: [
+    'worker-action',
+    'clinical-history-created',
+    'grooming-result-recorded',
+    'walk-completed'
+  ],
   data() {
     return {
       selectedPet: null,
@@ -187,6 +225,16 @@ export default {
       statusMessage: '',
       isError: false,
       hasSubmitted: false
+    }
+  },
+  watch: {
+    initialPet: {
+      immediate: true,
+      handler(pet) {
+        if (pet) {
+          this.selectPet(pet)
+        }
+      }
     }
   },
   computed: {
@@ -224,7 +272,7 @@ export default {
         resultado: ''
       }
     },
-    beginCare(pet) {
+    selectPet(pet) {
       this.selectedPet = pet
       this.manualPetId = pet.id_mascota ? String(pet.id_mascota) : ''
       const relatedAppointment = this.appointments.find((appointment) => (
@@ -249,16 +297,11 @@ export default {
         (item) => String(item.id_mascota) === this.manualPetId
       )
       if (!pet) {
+        this.selectedPet = null
         return
       }
 
-      this.selectedPet = pet
-      this.careDetails = {
-        ...this.emptyCareDetails(),
-        nombre_mascota: pet.nombre_mascota || ''
-      }
-      this.statusMessage = ''
-      this.isError = false
+      this.selectPet(pet)
     },
     cancelCare() {
       this.selectedPet = null
@@ -277,6 +320,7 @@ export default {
         || record.nombre_dueno
         || record.nombre_propietario
         || record.dueno?.nombre
+        || record.dueno?.usuario?.nombre_usuario
         || record.propietario?.nombre
         || record.owner?.name
         || ''
@@ -423,7 +467,8 @@ export default {
 }
 
 .worker-pets__form input,
-.worker-pets__form textarea {
+.worker-pets__form textarea,
+.worker-pets__form select {
   box-sizing: border-box;
   width: 100%;
   min-height: 44px;
@@ -439,8 +484,30 @@ export default {
   resize: vertical;
 }
 
+.worker-pets__pet-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--border-radius);
+  background: var(--color-background);
+}
+
+.worker-pets__pet-summary dt {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.worker-pets__pet-summary dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+}
+
 .worker-pets__form input:focus-visible,
-.worker-pets__form textarea:focus-visible {
+.worker-pets__form textarea:focus-visible,
+.worker-pets__form select:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }

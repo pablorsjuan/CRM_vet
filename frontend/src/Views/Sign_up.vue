@@ -42,6 +42,24 @@
           placeholder="+57 123456789"
           autocomplete="tel"
         />
+        <div class="signup__field">
+          <label class="signup__label" for="signup-sexo">Sexo</label>
+          <select id="signup-sexo" v-model="form.sexo" class="signup__input" required>
+            <option disabled value="">Selecciona una opción</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Otro">Otro</option>
+            <option value="Prefiero no decirlo">Prefiero no decirlo</option>
+          </select>
+        </div>
+        <SignupInput
+          id="signup-fecha-nacimiento"
+          v-model="form.fecha_nacimiento"
+          label="Fecha de nacimiento"
+          type="date"
+          :max="maxBirthDate"
+          autocomplete="bday"
+        />
 
         <SignupSubmitButton :disabled="isSubmitting" />
         <p v-if="statusMessage" class="signup__status" :role="isError ? 'alert' : 'status'">
@@ -70,14 +88,24 @@ export default {
     SignupTitle
   },
   data() {
+    const today = new Date()
+    const maxBirthDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0')
+    ].join('-')
+
     return {
       form: {
         nombre_usuario: '',
         usuario: '',
         contrasena: '',
         email: '',
-        num_celular: ''
+        num_celular: '',
+        sexo: '',
+        fecha_nacimiento: ''
       },
+      maxBirthDate,
       isSubmitting: false,
       isError: false,
       statusMessage: ''

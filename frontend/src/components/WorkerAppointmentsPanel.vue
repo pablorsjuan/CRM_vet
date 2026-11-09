@@ -5,11 +5,19 @@
       :worker-mode="true"
       @add-appointment="isModalOpen = true"
     />
+    <p v-if="loadError" class="worker-appointments__error" role="alert">
+      {{ loadError }}
+    </p>
+    <p v-if="statusMessage" class="worker-appointments__status" role="status">
+      {{ statusMessage }}
+    </p>
 
     <AppointmentModal
       v-if="isModalOpen"
       :pets="pets"
       :worker-role="role"
+      :error-message="loadError"
+      :is-saving="isSavingAppointment"
       @close="isModalOpen = false"
       @submit="createAppointment"
     />
@@ -19,6 +27,11 @@
 <script>
 import AppointmentModal from '@/components/AppointmentModal.vue'
 import AppointmentsSidebar from '@/components/AppointmentsSidebar.vue'
+import {
+  createAppointment,
+  getMyAppointments
+} from '@/services/appointmentsApi'
+import { hasAccessToken } from '@/services/api'
 
 export default {
   name: 'WorkerAppointmentsPanel',
@@ -45,38 +58,69 @@ export default {
   data() {
     return {
       isModalOpen: false,
-      createdAppointments: [],
-      nextAppointmentId: 1
+      loadedAppointments: [],
+      loadError: '',
+      statusMessage: '',
+      isSavingAppointment: false
     }
+  },
+  created() {
+    this.loadAppointments()
   },
   computed: {
     visibleAppointments() {
-      const baseAppointments = this.appointments.filter((appointment) => {
-        const status = (appointment.estado || appointment.status || '').toLocaleLowerCase()
-        return !['cancelada', 'cancelado', 'completada', 'completado', 'realizada', 'realizado']
-          .includes(status)
+      const allAppointments = [...this.appointments, ...this.loadedAppointments]
+      const uniqueAppointments = allAppointments.filter((appointment, index, list) => {
+        const id = appointment.id_cita || appointment.id
+        return !id || list.findIndex((item) => (
+          String(item.id_cita || item.id) === String(id)
+        )) === index
       })
-      const newAppointments = this.createdAppointments.filter((created) => (
-        !this.appointments.some((appointment) => (
-          String(appointment.id_cita || appointment.id || '')
-            === String(created.id_cita)
-        ))
-      ))
 
-      return [...baseAppointments, ...newAppointments]
+      return uniqueAppointments.filter((appointment) => {
+        const status = (appointment.estado || appointment.status || '').toLocaleLowerCase()
+        return ![
+          'cancelada',
+          'cancelado',
+          'completada',
+          'completado',
+          'realizada',
+          'realizado'
+        ].includes(status)
+      })
     }
   },
   methods: {
-    createAppointment(appointment) {
-      const createdAppointment = {
-        ...appointment,
-        id_cita: `local-${Date.now()}-${this.nextAppointmentId}`,
-        estado: 'Pendiente'
+    async loadAppointments() {
+      this.loadError = ''
+      try {
+        const appointments = await getMyAppointments()
+        if (!Array.isArray(appointments)) {
+          throw new Error('El servidor devolvió una lista de citas inválida.')
+        }
+        this.loadedAppointments = appointments
+      } catch (error) {
+        this.loadError = error.message
+        if (!hasAccessToken()) {
+          this.$router.push('/login')
+        }
       }
-      this.nextAppointmentId += 1
-      this.createdAppointments.push(createdAppointment)
-      this.$emit('appointment-created', createdAppointment)
-      this.isModalOpen = false
+    },
+    async createAppointment(appointment) {
+      this.loadError = ''
+      this.statusMessage = ''
+      this.isSavingAppointment = true
+      try {
+        const createdAppointment = await createAppointment(appointment)
+        this.loadedAppointments = [...this.loadedAppointments, createdAppointment]
+        this.$emit('appointment-created', createdAppointment)
+        this.statusMessage = 'Cita asignada correctamente.'
+        this.isModalOpen = false
+      } catch (error) {
+        this.loadError = error.message
+      } finally {
+        this.isSavingAppointment = false
+      }
     }
   }
 }
@@ -85,5 +129,13 @@ export default {
 <style scoped>
 .worker-appointments {
   width: 100%;
+}
+
+.worker-appointments__error {
+  color: var(--color-error);
+}
+
+.worker-appointments__status {
+  color: var(--color-success);
 }
 </style>

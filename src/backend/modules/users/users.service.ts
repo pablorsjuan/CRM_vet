@@ -5,6 +5,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { timingSafeEqual } from 'crypto';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -230,6 +231,44 @@ export class UsersService {
     return user;
   }
 
+  async findForAuthentication(username: string) {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.contrasena')
+      .where('user.usuario = :username', { username })
+      .getOne();
+  }
+
+  async verifyPassword(
+    user: Pick<User, 'id_usuario' | 'contrasena'>,
+    password: string,
+  ): Promise<boolean> {
+    const storedPassword = user.contrasena;
+    if (storedPassword.startsWith('$2')) {
+      if (!/^\$2[aby]\$(0[4-9]|[12]\d|3[01])\$[./A-Za-z0-9]{53}$/.test(storedPassword)) {
+        return false;
+      }
+
+      return bcrypt.compare(password, storedPassword);
+    }
+
+    const storedBuffer = Buffer.from(storedPassword);
+    const providedBuffer = Buffer.from(password);
+    if (
+      storedBuffer.length === 0
+      || storedBuffer.length !== providedBuffer.length
+      || !timingSafeEqual(storedBuffer, providedBuffer)
+    ) {
+      return false;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await this.usersRepository.update(
+      { id_usuario: user.id_usuario, contrasena: storedPassword },
+      { contrasena: hashedPassword },
+    );
+    return true;
+  }
 
   // ACTUALIZAR USUARIO
   async update(id: number, updateUserDto: UpdateUserDto) {

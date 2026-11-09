@@ -24,6 +24,7 @@ async function bootstrap() {
   .setVersion('1.0')
   .addTag('users', 'Gestión de usuarios')
   .addTag('pets', 'Gestión de mascotas')
+  .addBearerAuth()
   .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);

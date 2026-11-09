@@ -25,23 +25,50 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+## Configuración del proyecto
 
 ```bash
-$ npm install
+npm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+Completa las variables de PostgreSQL y asigna a `JWT_SECRET` un secreto aleatorio
+de al menos 32 caracteres. No uses el valor de ejemplo en producción.
+
+## API y autenticación
+
+La API escucha en el puerto `3000` por defecto y publica Swagger en `/api`.
+El registro de cuentas de propietario y el inicio de sesión no requieren token:
+
+- `POST /auth/register`: crea una cuenta de propietario y guarda la contraseña con bcrypt.
+- `POST /auth/login`: verifica usuario y contraseña; responde con un JWT válido por 8 horas.
+- `GET /appointments/availability?fecha=AAAA-MM-DD&tipo_cita=veterinaria`: consulta profesionales y horarios libres.
+- `GET /appointments/mine` y `POST /appointments`: consultan y agendan citas para el usuario autenticado; el propietario elige un profesional y el trabajador agenda a su propio nombre.
+- `PATCH /appointments/:id/cancel`: cancela una cita pendiente del propietario autenticado.
+- Las cuentas heredadas con contraseñas en texto plano se migran a bcrypt al iniciar sesión correctamente.
+- `GET /auth/profile`: requiere `Authorization: Bearer <token>`.
+- `GET /pets/mine`, `POST /pets`, `PATCH /pets/:id` y `DELETE /pets/:id` permiten al propietario gestionar sus propias mascotas.
+- `POST /clinical-histories` permite que un veterinario registre una atención; `GET /clinical-histories/mine` permite al propietario consultar sus historias.
+
+Las demás rutas requieren autenticación. Los permisos se determinan mediante el rol
+incluido en el JWT; los usuarios propietarios solo pueden consultar y modificar sus
+propias mascotas.
+
+En desarrollo, el frontend usa `http://localhost:3000` por defecto. Para cambiarlo,
+define `VUE_APP_API_URL` antes de iniciar o compilar el frontend. El origen de CORS se
+configura con `FRONTEND_ORIGIN`.
+
+## Compilar y ejecutar
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
 
 ## Run tests
