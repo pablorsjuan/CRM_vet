@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,10 +7,7 @@ import { AppService } from './app.service';
 
 import { UsersModule } from './modules/users/users.module';
 import { PetsModule } from './modules/pets/pets.module';
-
-
-import { databaseConfig } from './database/database.config';
-
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -23,14 +19,22 @@ import { databaseConfig } from './database/database.config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: databaseConfig,
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.getOrThrow<string>('DB_HOST'),
+        port: Number(configService.getOrThrow<string>('DB_PORT')),
+        username: configService.getOrThrow<string>('DB_USERNAME'),
+        password: configService.getOrThrow<string>('DB_PASSWORD'),
+        database: configService.getOrThrow<string>('DB_DATABASE'),
+        autoLoadEntities: true,
+        synchronize: false,
+      }),
     }),
-
     UsersModule,
     PetsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-
