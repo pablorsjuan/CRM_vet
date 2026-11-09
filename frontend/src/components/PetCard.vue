@@ -6,7 +6,7 @@
         <div class="pet-card__details">
           <strong class="pet-card__name">{{ currentPet.nombre_mascota }}</strong>
           <div class="pet-card__attributes">
-            <span>{{ currentPet.edad }} Años</span>
+            <span>{{ ageLabel }}</span>
             <span>Sexo: {{ currentPet.sexo }}</span>
           </div>
         </div>
@@ -74,16 +74,26 @@
             >
           </label>
 
-          <label class="pet-card__field">
+          <fieldset class="pet-card__age-choice">
+            <legend>¿Qué dato deseas registrar?</legend>
+            <label>
+              <input v-model="form.ageInputType" type="radio" value="age">
+              Edad en años
+            </label>
+            <label>
+              <input v-model="form.ageInputType" type="radio" value="birthDate">
+              Fecha de nacimiento
+            </label>
+          </fieldset>
+
+          <label v-if="form.ageInputType === 'age'" class="pet-card__field">
             <span>Edad (años) <span class="pet-card__hint">(obligatorio)</span></span>
-            <input
-              v-model="form.edad"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              required
-            >
+            <input v-model="form.edad" type="number" min="0" max="100" step="1" required>
+          </label>
+
+          <label v-else class="pet-card__field">
+            <span>Fecha de nacimiento <span class="pet-card__hint">(obligatorio)</span></span>
+            <input v-model="form.fecha_nacimiento" type="date" :max="today" required>
           </label>
 
           <label class="pet-card__field">
@@ -163,6 +173,9 @@
                 <span v-if="history.tratamiento">
                   <b>Tratamiento:</b> {{ history.tratamiento }}
                 </span>
+                <span v-if="history.antecedentes_medicos">
+                  <b>Antecedentes médicos:</b> {{ history.antecedentes_medicos }}
+                </span>
               </div>
             </li>
           </ul>
@@ -215,6 +228,50 @@ export default {
     currentPet() {
       return this.petDisplay || this.pet
     },
+    ageLabel() {
+      if (this.currentPet.edad !== undefined && this.currentPet.edad !== null) {
+        return `${this.currentPet.edad} años`
+      }
+
+      const birthDate = this.currentPet.fecha_nacimiento
+      if (!birthDate) {
+        return 'Edad no registrada'
+      }
+
+      const [year, month, day] = birthDate.split('-').map(Number)
+      const today = new Date()
+      let age = today.getFullYear() - year
+      const birthDay = new Date(year, month - 1, day)
+      const birthdayHasNotPassed = today.getMonth() + 1 < month
+        || (today.getMonth() + 1 === month && today.getDate() < day)
+
+      if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+        return 'Edad no registrada'
+      }
+
+      if (
+        birthDay.getFullYear() !== year
+        || birthDay.getMonth() + 1 !== month
+        || birthDay.getDate() !== day
+        || birthDay > today
+      ) {
+        return 'Edad no registrada'
+      }
+
+      if (birthdayHasNotPassed) {
+        age -= 1
+      }
+
+      return `${age} años`
+    },
+    today() {
+      const date = new Date()
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+
+      return `${year}-${month}-${day}`
+    },
     speciesEmoji() {
       const species = this.speciesOptions.find(
         (option) => option.value.toLowerCase() === (this.currentPet.especie || '').toLowerCase()
@@ -238,6 +295,8 @@ export default {
       return {
         nombre_mascota: pet.nombre_mascota || '',
         edad: pet.edad ?? '',
+        ageInputType: pet.fecha_nacimiento ? 'birthDate' : 'age',
+        fecha_nacimiento: pet.fecha_nacimiento || '',
         sexo: pet.sexo || '',
         color: pet.color || '',
         raza: pet.raza || '',
@@ -266,11 +325,28 @@ export default {
         : new Intl.DateTimeFormat('es', { dateStyle: 'medium' }).format(parsedDate)
     },
     savePet() {
+      const { ageInputType, ...form } = this.form
       const updatedPet = {
         ...this.currentPet,
-        ...this.form,
-        edad: Number(this.form.edad)
+        ...form
       }
+
+      if (ageInputType === 'age') {
+        const age = Number(form.edad)
+        if (!Number.isInteger(age) || age < 0 || age > 100) {
+          return
+        }
+
+        updatedPet.edad = age
+        delete updatedPet.fecha_nacimiento
+      } else {
+        if (!form.fecha_nacimiento || form.fecha_nacimiento > this.today) {
+          return
+        }
+
+        delete updatedPet.edad
+      }
+
       this.petDisplay = updatedPet
       this.isEditing = false
       this.$emit('update-pet', updatedPet)
@@ -393,6 +469,26 @@ export default {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   padding-top: 14px;
+}
+
+.pet-card__age-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pet-card__age-choice legend {
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.pet-card__age-choice label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pet-card__expand {
