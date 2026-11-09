@@ -80,14 +80,13 @@
 
         <label class="add-pet-modal__field">
           <span>
-            Color <span class="add-pet-modal__hint">(obligatorio)</span>
+            Color <span class="add-pet-modal__hint">(opcional)</span>
           </span>
           <input
             v-model.trim="color"
             type="text"
             maxlength="50"
             autocomplete="off"
-            required
           >
         </label>
 

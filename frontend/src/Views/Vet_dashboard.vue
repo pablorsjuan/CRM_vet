@@ -32,6 +32,13 @@
           role="vet"
           @clinical-history-created="$emit('clinical-history-created', $event)"
         />
+        <WorkerPetsSidebar
+          v-else-if="activePanel === 'care'"
+          :appointments="appointments"
+          role="vet"
+          manual-care
+          @clinical-history-created="$emit('clinical-history-created', $event)"
+        />
         <WorkerAppointmentsPanel
           v-else-if="activePanel === 'appointments'"
           :appointments="appointments"
@@ -77,6 +84,7 @@ export default {
       panels: [
         { id: 'pets', label: 'Mascotas', title: 'Mascotas' },
         { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
+        { id: 'care', label: 'Atender cita', title: 'Atender cita' },
         { id: 'profile', label: 'Cambiar datos del perfil', title: 'Cambiar datos del perfil' }
       ]
     }

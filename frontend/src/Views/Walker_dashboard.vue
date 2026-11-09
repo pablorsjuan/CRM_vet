@@ -32,6 +32,13 @@
           role="walker"
           @walk-completed="$emit('walk-completed', $event)"
         />
+        <WorkerPetsSidebar
+          v-else-if="activePanel === 'care'"
+          :appointments="appointments"
+          role="walker"
+          manual-care
+          @walk-completed="$emit('walk-completed', $event)"
+        />
         <WorkerAppointmentsPanel
           v-else-if="activePanel === 'appointments'"
           :appointments="appointments"
@@ -77,6 +84,7 @@ export default {
       panels: [
         { id: 'pets', label: 'Mascotas', title: 'Mascotas' },
         { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
+        { id: 'care', label: 'Atender cita', title: 'Atender cita' },
         { id: 'profile', label: 'Cambiar datos del perfil', title: 'Cambiar datos del perfil' }
       ]
     }

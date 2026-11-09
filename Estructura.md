@@ -47,6 +47,44 @@ src/
 
 ---
 
+# Inicializar el backend
+
+Se requiere tener Node.js/npm y PostgreSQL instalados y PostgreSQL en ejecución.
+Los comandos siguientes se ejecutan desde PowerShell en la raíz del proyecto:
+
+```powershell
+cd src\backend
+Copy-Item .env.example .env
+```
+
+Edita el archivo `.env` creado en `src/backend` con las credenciales de
+PostgreSQL. La configuración espera `DB_HOST`, `DB_PORT`, `DB_USERNAME`,
+`DB_PASSWORD` y `DB_DATABASE`; por defecto la base de datos se llama `crm_vet`.
+
+Crea la base de datos y carga el esquema inicial desde una base vacía (el
+archivo no debe ejecutarse sobre tablas ya existentes):
+
+```powershell
+createdb -U postgres crm_vet
+psql -U postgres -d crm_vet -f database\querys\crmVet_Schema_v2.sql
+```
+
+Instala las dependencias y levanta el backend en modo desarrollo:
+
+```powershell
+npm install
+npm run start:dev
+```
+
+El servidor queda disponible en `http://localhost:3000`; la documentación
+Swagger se encuentra en `http://localhost:3000/api`. Para compilar y ejecutar
+la versión de producción:
+
+```powershell
+npm run build
+npm run start:prod
+```
+
 # Carpeta `src/frontend`
 Se encuentran las carpetas relacionadas al manejo de VUE y sus dependencias.
 

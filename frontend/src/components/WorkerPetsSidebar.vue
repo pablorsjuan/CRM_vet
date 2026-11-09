@@ -1,14 +1,14 @@
 <template>
   <section class="worker-pets" aria-labelledby="worker-pets-title">
     <header class="worker-pets__header">
-      <h1 id="worker-pets-title">Mascotas</h1>
+      <h1 id="worker-pets-title">{{ manualCare ? 'Atender cita' : 'Mascotas' }}</h1>
     </header>
 
-    <p v-if="pets.length === 0" class="worker-pets__empty">
+    <p v-if="!manualCare && pets.length === 0" class="worker-pets__empty">
       No hay mascotas asignadas.
     </p>
 
-    <ul v-else class="worker-pets__list">
+    <ul v-if="!manualCare && pets.length" class="worker-pets__list">
       <li v-for="(pet, index) in pets" :key="pet.id_mascota || index">
         <PetCard
           :pet="pet"
@@ -19,67 +19,84 @@
     </ul>
 
     <section
-      v-if="selectedPet"
+      v-if="selectedPet || manualCare"
       class="worker-pets__care"
       aria-labelledby="worker-pets-care-title"
     >
       <h2 id="worker-pets-care-title">
-        {{ careTitle }}: {{ selectedPet.nombre_mascota }}
+        {{ careTitle }}: {{ careDetails.nombre_mascota || 'Nueva atención' }}
       </h2>
-      <p v-if="relatedAppointments.length" class="worker-pets__appointments">
+      <p v-if="!manualCare && relatedAppointments.length" class="worker-pets__appointments">
         Citas relacionadas:
         {{ relatedAppointments.map((appointment) => appointment.fecha || 'Sin fecha').join(', ') }}
       </p>
-      <p v-else class="worker-pets__appointments">
+      <p v-else-if="!manualCare" class="worker-pets__appointments">
         No hay una cita asociada a esta mascota en los datos recibidos.
       </p>
 
       <form
-        v-if="role === 'vet' && !hasSubmitted"
+        v-if="!hasSubmitted"
         class="worker-pets__form"
         @submit.prevent="submitCare"
       >
         <label>
-          Motivo de consulta
-          <input v-model.trim="careDetails.motivo_consulta" required maxlength="250">
-        </label>
-        <label>
-          Diagnóstico
-          <textarea v-model.trim="careDetails.diagnostico" required rows="3" />
-        </label>
-        <label>
-          Tratamiento
-          <textarea v-model.trim="careDetails.tratamiento" required rows="3" />
-        </label>
-        <button class="worker-pets__submit" type="submit">Guardar historia clínica</button>
-      </form>
-
-      <form
-        v-else-if="role === 'groomer' && !hasSubmitted"
-        class="worker-pets__form"
-        @submit.prevent="submitCare"
-      >
-        <label>
-          Resultado de peluquería
-          <textarea
-            v-model.trim="careDetails.resultado"
-            placeholder="Describe el servicio realizado y sus observaciones."
+          Nombre de la mascota
+          <input
+            v-model.trim="careDetails.nombre_mascota"
+            autocomplete="off"
+            maxlength="100"
             required
-            rows="4"
-          />
+          >
         </label>
-        <p class="worker-pets__note">
-          El registro de imágenes no está disponible en esta versión.
-        </p>
-        <button class="worker-pets__submit" type="submit">Registrar resultado</button>
-      </form>
+        <label>
+          Nombre del dueño
+          <input
+            v-model.trim="careDetails.nombre_usuario"
+            autocomplete="name"
+            maxlength="100"
+            required
+          >
+        </label>
 
-      <div v-else-if="role === 'walker' && !hasSubmitted" class="worker-pets__form">
-        <p>Confirma cuando hayas terminado el paseo de esta mascota.</p>
-        <button class="worker-pets__submit" type="button" @click="submitCare">
-          Marcar paseo como realizado
-        </button>
-      </div>
+        <template v-if="role === 'vet'">
+          <label>
+            Motivo de consulta
+            <input v-model.trim="careDetails.motivo_consulta" required maxlength="250">
+          </label>
+          <label>
+            Diagnóstico
+            <textarea v-model.trim="careDetails.diagnostico" required rows="3" />
+          </label>
+          <label>
+            Tratamiento
+            <textarea v-model.trim="careDetails.tratamiento" required rows="3" />
+          </label>
+          <button class="worker-pets__submit" type="submit">Guardar historia clínica</button>
+        </template>
+
+        <template v-else-if="role === 'groomer'">
+          <label>
+            Resultado de peluquería
+            <textarea
+              v-model.trim="careDetails.resultado"
+              placeholder="Describe el servicio realizado y sus observaciones."
+              required
+              rows="4"
+            />
+          </label>
+          <p class="worker-pets__note">
+            El registro de imágenes no está disponible en esta versión.
+          </p>
+          <button class="worker-pets__submit" type="submit">Registrar resultado</button>
+        </template>
+
+        <template v-else>
+          <p>Confirma cuando hayas terminado el paseo de esta mascota.</p>
+          <button class="worker-pets__submit" type="submit">
+            Marcar paseo como realizado
+          </button>
+        </template>
+      </form>
 
       <button class="worker-pets__cancel" type="button" @click="cancelCare">
         Cerrar
@@ -112,6 +129,10 @@ export default {
       type: String,
       required: true,
       validator: (value) => ['vet', 'groomer', 'walker'].includes(value)
+    },
+    manualCare: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['clinical-history-created', 'grooming-result-recorded', 'walk-completed'],
@@ -149,6 +170,8 @@ export default {
   methods: {
     emptyCareDetails() {
       return {
+        nombre_mascota: '',
+        nombre_usuario: '',
         motivo_consulta: '',
         diagnostico: '',
         tratamiento: '',
@@ -157,18 +180,55 @@ export default {
     },
     beginCare(pet) {
       this.selectedPet = pet
-      this.careDetails = this.emptyCareDetails()
+      const relatedAppointment = this.appointments.find((appointment) => (
+        (pet.id_mascota && appointment.id_mascota
+          && String(pet.id_mascota) === String(appointment.id_mascota))
+        || appointment.nombre_mascota === pet.nombre_mascota
+        || appointment.mascota === pet.nombre_mascota
+      ))
+      const ownerName = this.ownerName(pet) || this.ownerName(relatedAppointment)
+
+      this.careDetails = {
+        ...this.emptyCareDetails(),
+        nombre_mascota: pet.nombre_mascota || '',
+        nombre_usuario: ownerName
+      }
       this.statusMessage = ''
       this.hasSubmitted = false
     },
     cancelCare() {
       this.selectedPet = null
+      this.careDetails = this.emptyCareDetails()
       this.statusMessage = ''
       this.hasSubmitted = false
     },
+    ownerName(record) {
+      if (!record) {
+        return ''
+      }
+
+      return record.nombre_usuario
+        || record.nombre_dueno
+        || record.nombre_propietario
+        || record.dueno?.nombre
+        || record.propietario?.nombre
+        || record.owner?.name
+        || ''
+    },
     submitCare() {
+      if (!this.careDetails.nombre_mascota || !this.careDetails.nombre_usuario) {
+        return
+      }
+
+      const pet = {
+        ...this.selectedPet,
+        nombre_mascota: this.careDetails.nombre_mascota,
+        nombre_usuario: this.careDetails.nombre_usuario
+      }
       const payload = {
-        mascota: this.selectedPet,
+        mascota: pet,
+        nombre_mascota: this.careDetails.nombre_mascota,
+        nombre_usuario: this.careDetails.nombre_usuario,
         citas: this.relatedAppointments,
         fecha: this.localDate(),
         ...this.careDetails
@@ -261,6 +321,8 @@ export default {
   gap: 7px;
   font-weight: 600;
 }
+
+.worker-pets__form input,
 
 .worker-pets__form input,
 .worker-pets__form textarea {
