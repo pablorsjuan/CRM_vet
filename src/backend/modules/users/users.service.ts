@@ -14,6 +14,40 @@ import { User, RolUsuario } from '../../database/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
+interface OwnerPetSearchRow {
+  id_usuario: number;
+  nombre_usuario: string;
+  usuario: string;
+  id_mascota: number | null;
+  nombre_mascota: string | null;
+  especie: string | null;
+  raza: string | null;
+  sexo: string | null;
+  fecha_nacimiento: string | null;
+  peso: string | null;
+  color: string | null;
+  observaciones: string | null;
+}
+
+export interface OwnerPetSearchResult {
+  id_usuario: number;
+  nombre_usuario: string;
+  usuario: string;
+  mascotas: Array<Omit<
+    OwnerPetSearchRow,
+    'id_usuario' | 'nombre_usuario' | 'usuario'
+  >>;
+}
+
+function isDatabaseError(error: unknown): error is { code: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  );
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -99,12 +133,13 @@ export class UsersService {
           }
 
           // 3. Devolver datos sin contraseña
-          const { contrasena: _, ...resultado } = savedUser;
+          const resultado = { ...savedUser };
+          delete (resultado as Partial<User>).contrasena;
           return resultado;
         },
       );
     } catch (error) {
-      if (error.code === '23505') {
+      if (isDatabaseError(error) && error.code === '23505') {
         throw new ConflictException(
           'El usuario, correo o matrícula profesional ya existe',
         );
@@ -118,6 +153,76 @@ export class UsersService {
   // CONSULTAR TODOS LOS USUARIOS
   async findAll() {
     return this.usersRepository.find();
+  }
+
+  async searchOwnersWithPets(query: string): Promise<OwnerPetSearchResult[]> {
+    const searchTerm = query?.trim();
+    if (!searchTerm || searchTerm.length < 2) {
+      throw new BadRequestException(
+        'Ingresa al menos dos caracteres para buscar un usuario',
+      );
+    }
+
+    const rows = await this.usersRepository.manager.query<OwnerPetSearchRow[]>(
+      `WITH owner_matches AS (
+         SELECT id_usuario, nombre_usuario, usuario
+         FROM usuarios
+         WHERE rol = $1
+           AND (nombre_usuario ILIKE $2 OR usuario ILIKE $2)
+         ORDER BY nombre_usuario
+         LIMIT 50
+       )
+       SELECT
+         u.id_usuario,
+         u.nombre_usuario,
+         u.usuario,
+         d.id_dueno,
+         p.id_mascota,
+         p.nombre_mascota,
+         p.especie,
+         p.raza,
+         p.sexo,
+         p.fecha_nacimiento,
+         p.peso,
+         p.color,
+         p.observaciones
+       FROM owner_matches u
+       INNER JOIN duenos d ON d.id_usuario = u.id_usuario
+       LEFT JOIN mascotas p ON p.id_dueno = d.id_dueno
+       ORDER BY u.nombre_usuario, p.nombre_mascota
+      `,
+      [RolUsuario.DUENO, `%${searchTerm}%`],
+    );
+
+    const owners = new Map<number, OwnerPetSearchResult>();
+
+    for (const row of rows) {
+      if (!owners.has(row.id_usuario)) {
+        owners.set(row.id_usuario, {
+          id_usuario: row.id_usuario,
+          nombre_usuario: row.nombre_usuario,
+          usuario: row.usuario,
+          mascotas: [],
+        });
+      }
+
+      const owner = owners.get(row.id_usuario);
+      if (row.id_mascota !== null && owner) {
+        owner.mascotas.push({
+          id_mascota: row.id_mascota,
+          nombre_mascota: row.nombre_mascota,
+          especie: row.especie,
+          raza: row.raza,
+          sexo: row.sexo,
+          fecha_nacimiento: row.fecha_nacimiento,
+          peso: row.peso,
+          color: row.color,
+          observaciones: row.observaciones,
+        });
+      }
+    }
+
+    return Array.from(owners.values());
   }
 
   // CONSULTAR USUARIO POR ID
@@ -159,7 +264,7 @@ export class UsersService {
       // 6. Consultar nuevamente sin incluir contraseña
       return await this.findOne(id);
     } catch (error) {
-      if (error.code === '23505') {
+      if (isDatabaseError(error) && error.code === '23505') {
         throw new ConflictException(
           'El nombre de usuario o correo ya está registrado',
         );
@@ -205,7 +310,7 @@ export class UsersService {
         message: `Usuario ${id} eliminado correctamente`,
       };
     } catch (error) {
-      if (error.code === '23503') {
+      if (isDatabaseError(error) && error.code === '23503') {
         throw new BadRequestException(
           'No se puede eliminar el usuario porque tiene registros asociados',
         );

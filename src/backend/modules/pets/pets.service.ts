@@ -163,14 +163,19 @@ export class PetsService {
       return {
         message: `Mascota ${id} eliminada correctamente`,
       };
-    } catch (error) {
-      if (error.code === '23503') {
-        throw new BadRequestException(
-          'No se puede eliminar la mascota porque tiene registros asociados',
-        );
-      }
+    } catch (error: unknown) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === '23503'
+  ) {
+    throw new BadRequestException(
+      'No se puede eliminar la mascota porque tiene registros asociados',
+    );
+  }
 
-      throw error;
+  throw error;
     }
   }
 }

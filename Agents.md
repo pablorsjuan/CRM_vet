@@ -9,14 +9,13 @@ Es un CRM Veterinario que permita tener diferentes roles dentro del programa, do
 |ID|	Nombre|	Descripción|
 |---|---|---|
 |RF-001	|Registro de usuario. |El sistema deberá permitir que el usuario se registre con un usuario, correo y contraseña.|
-|RF-002	|Registro de mascota.	|El sistema deberá permitir que el usuario registre a su mascota con nombre, especie, raza, sexo, |fecha de nacimiento, peso, color, fotografía y observaciones de la mascota.|
+|RF-002	|Registro de mascota.	|El sistema deberá permitir que el usuario registre a su mascota con nombre, especie, raza, sexo, |fecha de nacimiento, peso, color y observaciones de la mascota.|
 |RF-003	|Recuperación de contraseña.	|El sistema deberá permitir al usuario recuperar la contraseña en caso de olvidarla.|
 |RF-004	|Registro de veterinario.	|El sistema deberá permitir al veterinario registrarse con nombre, correo, identificación y licencia de veterinario.|
 |RF-005	|Realizar historia clínica.	|El sistema deberá permitir al veterinario crear una historia clínica de la mascota.|
 |RF-006	|Registro de peluquero.	|El sistema deberá permitir al peluquero registrarse con nombre, correo e identificación.|
 |RF-007	|Registro de paseador canino.	|El sistema deberá permitir al paseador registrarse con nombre, correo e identificación.|
 |RF-008	|Visualización de pendientes.	|El sistema deberá permitir al trabajador ver sus citas pendientes.|
-|RF-009	|Evidencia de peluquería.	|El sistema deberá permitir subir imágenes para comprobar el antes y después de la peluquería.|
 |RF-010	|Inicio de Sesión.	|El sistema deberá permitir que solo los usuarios registrados puedan iniciar sesión con usuario y contraseña.|
 |RF-011	|Gestión de Roles.	|El sistema deberá identificar el rol del usuario y mostrar las funcionalidades disponibles/habilitadas que le correspondan.|
 |RF-012	|Actualización de perfil.	|El sistema deberá permitir que los usuarios actualicen su información personal y datos de contacto.|
