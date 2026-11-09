@@ -9,6 +9,7 @@ import Groomer_dashboard from '@/Views/Groomer_dashboard.vue'
 import Walker_dashboard from '@/Views/Walker_dashboard.vue'
 import Forgot_password from '@/Views/Forgot_password.vue'
 import User_pet from '@/Views/User_pet.vue'
+import { getSessionRole, hasAccessToken } from '@/services/api'
 
 const routes = [
   {
@@ -29,21 +30,25 @@ const routes = [
   {
     path: '/user_dashboard',
     name: 'user_dashboard',
+    meta: { requiresAuth: true, role: 'dueno' },
     component: User_dashboard
   },
   {
     path: '/vet_dashboard',
     name: 'vet_dashboard',
+    meta: { requiresAuth: true, role: 'veterinario' },
     component: Vet_dashboard
   },
   {
     path: '/groomer_dashboard',
     name: 'groomer_dashboard',
+    meta: { requiresAuth: true, role: 'peluquero' },
     component: Groomer_dashboard
   },
   {
     path: '/walker_dashboard',
     name: 'walker_dashboard',
+    meta: { requiresAuth: true, role: 'paseador' },
     component: Walker_dashboard
   },
   {
@@ -54,6 +59,7 @@ const routes = [
   {
     path: '/user_pet',
     name: 'user_pet',
+    meta: { requiresAuth: true },
     component: User_pet
   }
 ]
@@ -61,6 +67,18 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !hasAccessToken()) {
+    return { name: 'login' }
+  }
+
+  if (to.meta.role && to.meta.role !== getSessionRole()) {
+    return { name: 'login' }
+  }
+
+  return true
 })
 
 export default router

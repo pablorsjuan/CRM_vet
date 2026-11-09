@@ -21,6 +21,7 @@
           <router-link
             class="worker-dashboard__navigation-button worker-dashboard__navigation-button--logout"
             to="/login"
+            @click.prevent="logout"
           >
             Cerrar sesión
           </router-link>
@@ -28,15 +29,18 @@
       </aside>
 
       <section class="worker-dashboard__content" aria-live="polite">
+        <p v-if="isLoadingPets" role="status">Cargando mascotas…</p>
+        <p v-if="loadError" role="alert">{{ loadError }}</p>
         <WorkerPetsSidebar
           v-if="activePanel === 'pets'"
-          :pets="pets"
+          :pets="allPets"
           :appointments="appointments"
           role="vet"
           @clinical-history-created="$emit('clinical-history-created', $event)"
         />
         <WorkerPetsSidebar
           v-else-if="activePanel === 'care'"
+          :pets="allPets"
           :appointments="appointments"
           role="vet"
           manual-care
@@ -45,7 +49,7 @@
         <WorkerAppointmentsPanel
           v-else-if="activePanel === 'appointments'"
           :appointments="appointments"
-          :pets="pets"
+          :pets="allPets"
           role="vet"
           @appointment-created="$emit('appointment-created', $event)"
         />
@@ -62,6 +66,8 @@
 import UserNavbar from '@/components/UserNavbar.vue'
 import WorkerPetsSidebar from '@/components/WorkerPetsSidebar.vue'
 import WorkerAppointmentsPanel from '@/components/WorkerAppointmentsPanel.vue'
+import { logoutUser } from '@/services/authApi'
+import { apiRequest, hasAccessToken } from '@/services/api'
 
 export default {
   name: 'VetDashboard',
@@ -84,6 +90,9 @@ export default {
   data() {
     return {
       activePanel: 'care',
+      loadedPets: [],
+      isLoadingPets: false,
+      loadError: '',
       panels: [
         { id: 'care', label: 'Atender cita', title: 'Atender cita' },
         { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
@@ -92,7 +101,13 @@ export default {
       ]
     }
   },
+  created() {
+    this.loadPets()
+  },
   computed: {
+    allPets() {
+      return this.pets.length ? this.pets : this.loadedPets
+    },
     activePanelTitle() {
       return this.panels.find((panel) => panel.id === this.activePanel).title
     },
@@ -102,6 +117,30 @@ export default {
       }
 
       return `La sección de ${this.activePanelTitle.toLowerCase()} se definirá próximamente.`
+    }
+  },
+  methods: {
+    async loadPets() {
+      this.isLoadingPets = true
+      this.loadError = ''
+      try {
+        const pets = await apiRequest('/pets')
+        if (!Array.isArray(pets)) {
+          throw new Error('El servidor devolvió una lista de mascotas inválida.')
+        }
+        this.loadedPets = pets
+      } catch (error) {
+        this.loadError = error.message
+        if (!hasAccessToken()) {
+          this.$router.push('/login')
+        }
+      } finally {
+        this.isLoadingPets = false
+      }
+    },
+    logout() {
+      logoutUser()
+      this.$router.push('/login')
     }
   }
 }

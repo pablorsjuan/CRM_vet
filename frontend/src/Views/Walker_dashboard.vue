@@ -21,6 +21,7 @@
           <router-link
             class="worker-dashboard__navigation-button worker-dashboard__navigation-button--logout"
             to="/login"
+            @click.prevent="logout"
           >
             Cerrar sesión
           </router-link>
@@ -62,6 +63,7 @@
 import UserNavbar from '@/components/UserNavbar.vue'
 import WorkerPetsSidebar from '@/components/WorkerPetsSidebar.vue'
 import WorkerAppointmentsPanel from '@/components/WorkerAppointmentsPanel.vue'
+import { logoutUser } from '@/services/authApi'
 
 export default {
   name: 'WalkerDashboard',
@@ -102,6 +104,12 @@ export default {
       }
 
       return `La sección de ${this.activePanelTitle.toLowerCase()} se definirá próximamente.`
+    }
+  },
+  methods: {
+    logout() {
+      logoutUser()
+      this.$router.push('/login')
     }
   }
 }

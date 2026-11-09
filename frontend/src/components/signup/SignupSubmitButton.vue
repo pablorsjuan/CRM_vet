@@ -1,9 +1,17 @@
 <template>
-  <button class="signup__submit" type="submit">Crear cuenta</button>
+  <button class="signup__submit" type="submit" :disabled="disabled">
+    {{ disabled ? 'Creando cuenta…' : 'Crear cuenta' }}
+  </button>
 </template>
 
 <script>
 export default {
-  name: 'SignupSubmitButton'
+  name: 'SignupSubmitButton',
+  props: {
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>

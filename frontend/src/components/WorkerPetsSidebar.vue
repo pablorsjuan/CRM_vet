@@ -39,7 +39,29 @@
         @submit.prevent="submitCare"
       >
         <div v-if="!hasSubmitted" class="worker-pets__fields">
-          <label>
+          <label
+            v-if="manualCare && role === 'vet'"
+            class="worker-pets__field--full"
+          >
+            Mascota
+            <select v-model="manualPetId" required @change="selectManualPet">
+              <option disabled value="">Selecciona una mascota</option>
+              <option
+                v-for="pet in pets"
+                :key="pet.id_mascota"
+                :value="String(pet.id_mascota)"
+              >
+                {{ pet.nombre_mascota }}
+              </option>
+            </select>
+          </label>
+          <p
+            v-if="manualCare && role === 'vet' && pets.length === 0"
+            class="worker-pets__field--full"
+          >
+            No hay mascotas disponibles para registrar una historia clínica.
+          </p>
+          <label v-if="role !== 'vet'">
             Nombre de la mascota
             <input
               v-model.trim="careDetails.nombre_mascota"
@@ -48,7 +70,7 @@
               required
             >
           </label>
-          <label>
+          <label v-if="role !== 'vet'">
             Nombre del dueño
             <input
               v-model.trim="careDetails.nombre_usuario"
@@ -121,7 +143,7 @@
         </div>
       </form>
 
-      <p v-if="statusMessage" class="worker-pets__status" role="status">
+      <p v-if="statusMessage" class="worker-pets__status" :role="isError ? 'alert' : 'status'">
         {{ statusMessage }}
       </p>
     </section>
@@ -130,6 +152,7 @@
 
 <script>
 import PetCard from '@/components/PetCard.vue'
+import { createClinicalHistory } from '@/services/clinicalHistoriesApi'
 
 export default {
   name: 'WorkerPetsSidebar',
@@ -159,8 +182,10 @@ export default {
   data() {
     return {
       selectedPet: null,
+      manualPetId: '',
       careDetails: this.emptyCareDetails(),
       statusMessage: '',
+      isError: false,
       hasSubmitted: false
     }
   },
@@ -201,6 +226,7 @@ export default {
     },
     beginCare(pet) {
       this.selectedPet = pet
+      this.manualPetId = pet.id_mascota ? String(pet.id_mascota) : ''
       const relatedAppointment = this.appointments.find((appointment) => (
         (pet.id_mascota && appointment.id_mascota
           && String(pet.id_mascota) === String(appointment.id_mascota))
@@ -215,12 +241,31 @@ export default {
         nombre_usuario: ownerName
       }
       this.statusMessage = ''
+      this.isError = false
       this.hasSubmitted = false
+    },
+    selectManualPet() {
+      const pet = this.pets.find(
+        (item) => String(item.id_mascota) === this.manualPetId
+      )
+      if (!pet) {
+        return
+      }
+
+      this.selectedPet = pet
+      this.careDetails = {
+        ...this.emptyCareDetails(),
+        nombre_mascota: pet.nombre_mascota || ''
+      }
+      this.statusMessage = ''
+      this.isError = false
     },
     cancelCare() {
       this.selectedPet = null
+      this.manualPetId = ''
       this.careDetails = this.emptyCareDetails()
       this.statusMessage = ''
+      this.isError = false
       this.hasSubmitted = false
     },
     ownerName(record) {
@@ -236,8 +281,12 @@ export default {
         || record.owner?.name
         || ''
     },
-    submitCare() {
-      if (!this.careDetails.nombre_mascota || !this.careDetails.nombre_usuario) {
+    async submitCare() {
+      if (
+        (this.role === 'vet' && !this.selectedPet?.id_mascota)
+        || (this.role !== 'vet'
+          && (!this.careDetails.nombre_mascota || !this.careDetails.nombre_usuario))
+      ) {
         return
       }
 
@@ -256,15 +305,31 @@ export default {
       }
 
       if (this.role === 'vet') {
-        this.$emit('clinical-history-created', payload)
+        try {
+          const history = await createClinicalHistory({
+            id_mascota: pet.id_mascota,
+            motivo_consulta: this.careDetails.motivo_consulta,
+            antecedentes_medicos: this.careDetails.antecedentes_medicos,
+            diagnostico: this.careDetails.diagnostico,
+            tratamiento: this.careDetails.tratamiento
+          })
+          this.$emit('clinical-history-created', history)
+          this.statusMessage = 'Historia clínica guardada correctamente.'
+          this.isError = false
+          this.hasSubmitted = true
+        } catch (error) {
+          this.statusMessage = error.message
+          this.isError = true
+        }
       } else if (this.role === 'groomer') {
         this.$emit('grooming-result-recorded', payload)
+        this.statusMessage = 'Solicitud enviada al panel para su registro.'
+        this.hasSubmitted = true
       } else {
         this.$emit('walk-completed', payload)
+        this.statusMessage = 'Solicitud enviada al panel para su registro.'
+        this.hasSubmitted = true
       }
-
-      this.statusMessage = 'Solicitud enviada al panel para su registro.'
-      this.hasSubmitted = true
     },
     localDate() {
       const date = new Date()
