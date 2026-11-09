@@ -11,6 +11,7 @@ import { PetsModule } from './modules/pets/pets.module';
 
 
 import { databaseConfig } from './database/database.config';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 
 @Module({
@@ -28,6 +29,7 @@ import { databaseConfig } from './database/database.config';
 
     UsersModule,
     PetsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
