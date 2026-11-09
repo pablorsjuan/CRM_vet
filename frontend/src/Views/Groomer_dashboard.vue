@@ -8,7 +8,10 @@
             v-for="panel in panels"
             :key="panel.id"
             class="worker-dashboard__navigation-button"
-            :class="{ 'worker-dashboard__navigation-button--active': activePanel === panel.id }"
+            :class="{
+              'worker-dashboard__navigation-button--active': activePanel === panel.id,
+              'worker-dashboard__navigation-button--care': panel.id === 'care'
+            }"
             type="button"
             :aria-current="activePanel === panel.id ? 'page' : null"
             @click="activePanel = panel.id"
@@ -80,11 +83,11 @@ export default {
   emits: ['grooming-result-recorded', 'appointment-created'],
   data() {
     return {
-      activePanel: 'appointments',
+      activePanel: 'care',
       panels: [
-        { id: 'pets', label: 'Mascotas', title: 'Mascotas' },
-        { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
         { id: 'care', label: 'Atender cita', title: 'Atender cita' },
+        { id: 'appointments', label: 'Citas pendientes', title: 'Citas pendientes' },
+        { id: 'pets', label: 'Mascotas', title: 'Mascotas' },
         { id: 'profile', label: 'Cambiar datos del perfil', title: 'Cambiar datos del perfil' }
       ]
     }
@@ -151,6 +154,17 @@ export default {
 .worker-dashboard__navigation-button:focus-visible,
 .worker-dashboard__navigation-button--active {
   background: var(--color-accent);
+}
+
+.worker-dashboard__navigation-button--care {
+  background: var(--color-main-button);
+  color: var(--color-surface);
+  font-weight: 600;
+}
+
+.worker-dashboard__navigation-button--care:hover,
+.worker-dashboard__navigation-button--care:focus-visible {
+  background: var(--color-main-button-hover);
 }
 
 .worker-dashboard__navigation-button--logout:hover,

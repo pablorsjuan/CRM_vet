@@ -35,72 +35,92 @@
       </p>
 
       <form
-        v-if="!hasSubmitted"
         class="worker-pets__form"
         @submit.prevent="submitCare"
       >
-        <label>
-          Nombre de la mascota
-          <input
-            v-model.trim="careDetails.nombre_mascota"
-            autocomplete="off"
-            maxlength="100"
-            required
-          >
-        </label>
-        <label>
-          Nombre del dueño
-          <input
-            v-model.trim="careDetails.nombre_usuario"
-            autocomplete="name"
-            maxlength="100"
-            required
-          >
-        </label>
-
-        <template v-if="role === 'vet'">
+        <div v-if="!hasSubmitted" class="worker-pets__fields">
           <label>
-            Motivo de consulta
-            <input v-model.trim="careDetails.motivo_consulta" required maxlength="250">
-          </label>
-          <label>
-            Diagnóstico
-            <textarea v-model.trim="careDetails.diagnostico" required rows="3" />
-          </label>
-          <label>
-            Tratamiento
-            <textarea v-model.trim="careDetails.tratamiento" required rows="3" />
-          </label>
-          <button class="worker-pets__submit" type="submit">Guardar historia clínica</button>
-        </template>
-
-        <template v-else-if="role === 'groomer'">
-          <label>
-            Resultado de peluquería
-            <textarea
-              v-model.trim="careDetails.resultado"
-              placeholder="Describe el servicio realizado y sus observaciones."
+            Nombre de la mascota
+            <input
+              v-model.trim="careDetails.nombre_mascota"
+              autocomplete="off"
+              maxlength="100"
               required
-              rows="4"
-            />
+            >
           </label>
-          <p class="worker-pets__note">
-            El registro de imágenes no está disponible en esta versión.
-          </p>
-          <button class="worker-pets__submit" type="submit">Registrar resultado</button>
-        </template>
+          <label>
+            Nombre del dueño
+            <input
+              v-model.trim="careDetails.nombre_usuario"
+              autocomplete="name"
+              maxlength="100"
+              required
+            >
+          </label>
 
-        <template v-else>
-          <p>Confirma cuando hayas terminado el paseo de esta mascota.</p>
-          <button class="worker-pets__submit" type="submit">
+          <template v-if="role === 'vet'">
+            <label>
+              Motivo de consulta
+              <input v-model.trim="careDetails.motivo_consulta" required maxlength="250">
+            </label>
+            <label class="worker-pets__field--full">
+              Antecedentes médicos
+              <textarea
+                v-model.trim="careDetails.antecedentes_medicos"
+                placeholder="Alergias, enfermedades previas, cirugías o medicación actual."
+                rows="3"
+              />
+            </label>
+            <label class="worker-pets__field--full">
+              Diagnóstico
+              <textarea v-model.trim="careDetails.diagnostico" required rows="3" />
+            </label>
+            <label class="worker-pets__field--full">
+              Tratamiento
+              <textarea v-model.trim="careDetails.tratamiento" required rows="3" />
+            </label>
+          </template>
+
+          <template v-else-if="role === 'groomer'">
+            <label class="worker-pets__field--full">
+              Resultado de peluquería
+              <textarea
+                v-model.trim="careDetails.resultado"
+                placeholder="Describe el servicio realizado y sus observaciones."
+                required
+                rows="4"
+              />
+            </label>
+            <p class="worker-pets__note worker-pets__field--full">
+              El registro de imágenes no está disponible en esta versión.
+            </p>
+          </template>
+
+          <p v-else class="worker-pets__field--full">
+            Confirma cuando hayas terminado el paseo de esta mascota.
+          </p>
+        </div>
+
+        <div class="worker-pets__actions">
+          <button v-if="!hasSubmitted && role === 'vet'" class="worker-pets__submit" type="submit">
+            Guardar historia clínica
+          </button>
+          <button
+            v-else-if="!hasSubmitted && role === 'groomer'"
+            class="worker-pets__submit"
+            type="submit"
+          >
+            Registrar resultado
+          </button>
+          <button v-else-if="!hasSubmitted" class="worker-pets__submit" type="submit">
             Marcar paseo como realizado
           </button>
-        </template>
+          <button class="worker-pets__cancel" type="button" @click="cancelCare">
+            Cerrar
+          </button>
+        </div>
       </form>
 
-      <button class="worker-pets__cancel" type="button" @click="cancelCare">
-        Cerrar
-      </button>
       <p v-if="statusMessage" class="worker-pets__status" role="status">
         {{ statusMessage }}
       </p>
@@ -173,6 +193,7 @@ export default {
         nombre_mascota: '',
         nombre_usuario: '',
         motivo_consulta: '',
+        antecedentes_medicos: '',
         diagnostico: '',
         tratamiento: '',
         resultado: ''
@@ -277,6 +298,13 @@ export default {
 .worker-pets__header h1,
 .worker-pets__care h2 {
   margin: 0;
+}
+
+.worker-pets__header h1 {
+  font-size: 2em;
+}
+
+.worker-pets__care h2 {
   font-size: 20px;
 }
 
@@ -316,6 +344,13 @@ export default {
   gap: 14px;
 }
 
+.worker-pets__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+  max-width: 760px;
+}
+
 .worker-pets__form label {
   display: grid;
   gap: 7px;
@@ -323,16 +358,14 @@ export default {
 }
 
 .worker-pets__form input,
-
-.worker-pets__form input,
 .worker-pets__form textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 42px;
-  padding: 9px 11px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 1px solid var(--color-text-muted);
   border-radius: var(--border-radius);
-  background: var(--color-background);
+  background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
 }
@@ -341,11 +374,26 @@ export default {
   resize: vertical;
 }
 
+.worker-pets__form input:focus-visible,
+.worker-pets__form textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.worker-pets__field--full {
+  grid-column: 1 / -1;
+}
+
+.worker-pets__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .worker-pets__submit,
 .worker-pets__cancel {
-  justify-self: start;
-  min-height: 42px;
-  padding: 9px 14px;
+  min-height: 44px;
+  padding: 10px 16px;
   border: 0;
   border-radius: var(--border-radius);
   font: inherit;
@@ -353,13 +401,23 @@ export default {
 }
 
 .worker-pets__submit {
-  background: var(--color-primary);
+  background: var(--color-main-button);
   color: var(--color-surface);
+}
+
+.worker-pets__submit:hover,
+.worker-pets__submit:focus-visible {
+  background: var(--color-main-button-hover);
 }
 
 .worker-pets__cancel {
   background: var(--color-accent);
   color: var(--color-text);
+}
+
+.worker-pets__cancel:hover,
+.worker-pets__cancel:focus-visible {
+  background: var(--color-gradient-left);
 }
 
 .worker-pets__status {

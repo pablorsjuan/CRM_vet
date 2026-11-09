@@ -53,18 +53,28 @@
           >
         </label>
 
-        <label class="add-pet-modal__field">
+        <fieldset class="add-pet-modal__age-choice">
+          <legend>¿Qué dato deseas registrar?</legend>
+          <label>
+            <input v-model="ageInputType" type="radio" value="age">
+            Edad en años
+          </label>
+          <label>
+            <input v-model="ageInputType" type="radio" value="birthDate">
+            Fecha de nacimiento
+          </label>
+        </fieldset>
+
+        <label v-if="ageInputType === 'age'" class="add-pet-modal__field">
+          <span>Edad (años) <span class="add-pet-modal__hint">(obligatorio)</span></span>
+          <input v-model="age" type="number" min="0" max="100" step="1" required>
+        </label>
+
+        <label v-else class="add-pet-modal__field">
           <span>
-            Edad (años) <span class="add-pet-modal__hint">(obligatorio)</span>
+            Fecha de nacimiento <span class="add-pet-modal__hint">(obligatorio)</span>
           </span>
-          <input
-            v-model="age"
-            type="number"
-            min="0"
-            max="100"
-            step="1"
-            required
-          >
+          <input v-model="birthDate" type="date" :max="today" required>
         </label>
 
         <label class="add-pet-modal__field">
@@ -138,11 +148,23 @@ export default {
     return {
       species: '',
       name: '',
+      ageInputType: 'age',
       age: '',
+      birthDate: '',
       sex: '',
       color: '',
       breed: '',
       observations: ''
+    }
+  },
+  computed: {
+    today() {
+      const date = new Date()
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+
+      return `${year}-${month}-${day}`
     }
   },
   methods: {
@@ -154,9 +176,23 @@ export default {
       const pet = {
         nombre_mascota: this.name,
         especie: this.species,
-        edad: Number(this.age),
         sexo: this.sex,
         color: this.color
+      }
+
+      if (this.ageInputType === 'age') {
+        const age = Number(this.age)
+        if (!Number.isInteger(age) || age < 0 || age > 100) {
+          return
+        }
+
+        pet.edad = age
+      } else {
+        if (!this.birthDate || this.birthDate > this.today) {
+          return
+        }
+
+        pet.fecha_nacimiento = this.birthDate
       }
 
       if (this.breed) {
@@ -240,8 +276,28 @@ export default {
 }
 
 .add-pet-modal__field .add-pet-modal__hint,
-.add-pet-modal__age legend {
+.add-pet-modal__age-choice legend {
   color: var(--color-text-muted);
+}
+
+.add-pet-modal__age-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.add-pet-modal__age-choice legend {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.add-pet-modal__age-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .add-pet-modal__field input,
