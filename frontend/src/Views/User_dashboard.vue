@@ -34,6 +34,7 @@
           <router-link
             class="user-dashboard__navigation-button user-dashboard__navigation-button--logout"
             to="/login"
+            @click.prevent="logout"
           >
             Cerrar sesión
           </router-link>
@@ -41,11 +42,17 @@
       </aside>
 
       <section class="user-dashboard__content" aria-live="polite">
+        <p v-if="isLoadingData" class="user-dashboard__api-status" role="status">
+          Cargando tus datos…
+        </p>
+        <p v-if="dashboardError" class="user-dashboard__api-error" role="alert">
+          {{ dashboardError }}
+        </p>
         <PetsSidebar
           v-if="activePanel === 'pets'"
           :pets="visiblePets"
           :species-options="speciesOptions"
-          :clinical-histories="clinicalHistories"
+          :clinical-histories="visibleClinicalHistories"
           @add-pet="openPetModal"
           @edit-pet="$emit('edit-pet', $event)"
           @update-pet="updatePet"
@@ -164,6 +171,7 @@
     <AddPetModal
       v-if="isPetModalOpen"
       :species-options="speciesOptions"
+      :error-message="petSubmissionError"
       @close="isPetModalOpen = false"
       @submit="submitPet"
     />
@@ -177,6 +185,8 @@ import PetsSidebar from '@/components/PetsSidebar.vue'
 import AppointmentsSidebar from '@/components/AppointmentsSidebar.vue'
 import AppointmentModal from '@/components/AppointmentModal.vue'
 import AddPetModal from '@/components/AddPetModal.vue'
+import { logoutUser } from '@/services/authApi'
+import { apiRequest, hasAccessToken } from '@/services/api'
 
 export default {
   name: 'UserDashboard',
@@ -211,9 +221,12 @@ export default {
       activePanel: 'pets',
       isAppointmentModalOpen: false,
       isPetModalOpen: false,
-      createdPets: [],
-      updatedPets: [],
-      deletedPets: [],
+      apiPets: [],
+      apiHistories: [],
+      apiUserId: null,
+      isLoadingData: false,
+      dashboardError: '',
+      petSubmissionError: '',
       createdAppointments: [],
       cancelledAppointmentIds: [],
       cancelledAppointmentObjects: [],
@@ -231,6 +244,9 @@ export default {
       }
     }
   },
+  created() {
+    this.loadDashboardData()
+  },
   watch: {
     profile: {
       deep: true,
@@ -245,25 +261,10 @@ export default {
   },
   computed: {
     visiblePets() {
-      const newPets = this.createdPets.filter((createdPet) => (
-        !this.pets.some((pet) => (
-          pet.nombre_mascota === createdPet.nombre_mascota
-          && pet.especie === createdPet.especie
-          && pet.raza === createdPet.raza
-          && pet.edad === createdPet.edad
-          && pet.sexo === createdPet.sexo
-          && pet.color === createdPet.color
-          && pet.observaciones === createdPet.observaciones
-          && pet.fecha_nacimiento === createdPet.fecha_nacimiento
-        ))
-      ))
-
-      return [...this.pets, ...newPets]
-        .filter((pet) => !this.deletedPets.some((deletedPet) => this.samePet(pet, deletedPet)))
-        .map((pet) => {
-          const updatedPet = this.updatedPets.find((entry) => this.samePet(entry.original, pet))
-          return updatedPet ? updatedPet.pet : pet
-        })
+      return this.pets.length ? this.pets : this.apiPets
+    },
+    visibleClinicalHistories() {
+      return this.clinicalHistories.length ? this.clinicalHistories : this.apiHistories
     },
     visibleAppointments() {
       const newAppointments = this.createdAppointments.filter((createdAppointment) => (
@@ -307,56 +308,119 @@ export default {
     AddPetModal
   },
   methods: {
+    async loadDashboardData() {
+      this.isLoadingData = true
+      this.dashboardError = ''
+      try {
+        const [profile, pets, histories] = await Promise.all([
+          apiRequest('/auth/profile'),
+          apiRequest('/pets/mine'),
+          apiRequest('/clinical-histories/mine')
+        ])
+        if (!Array.isArray(pets)) {
+          throw new Error('El servidor devolvió una lista de mascotas inválida.')
+        }
+        if (!Array.isArray(histories)) {
+          throw new Error('El servidor devolvió una lista de historias clínicas inválida.')
+        }
+
+        if (!profile || !Number.isInteger(profile.id_usuario)) {
+          throw new Error('El servidor devolvió un perfil de usuario inválido.')
+        }
+
+        this.apiUserId = profile.id_usuario
+        this.apiPets = pets
+        this.apiHistories = histories
+        this.profileDraft = {
+          username: profile.usuario || '',
+          email: profile.email || '',
+          cellphone: profile.num_celular || ''
+        }
+      } catch (error) {
+        this.dashboardError = error.message
+        if (!hasAccessToken()) {
+          this.$router.push('/login')
+        }
+      } finally {
+        this.isLoadingData = false
+      }
+    },
+    logout() {
+      logoutUser()
+      this.$router.push('/login')
+    },
     openPetModal() {
       this.isPetModalOpen = true
       this.$emit('add-pet')
     },
-    submitPet(pet) {
-      this.createdPets.push(pet)
-      this.$emit('pet-created', pet)
-      this.isPetModalOpen = false
+    async submitPet(pet) {
+      this.petSubmissionError = ''
+      try {
+        const createdPet = await apiRequest('/pets', {
+          method: 'POST',
+          body: pet
+        })
+        this.apiPets = [...this.apiPets, createdPet]
+        this.$emit('pet-created', createdPet)
+        this.isPetModalOpen = false
+      } catch (error) {
+        this.petSubmissionError = error.message
+      }
     },
-    samePet(first, second) {
-      if (first.id_mascota && second.id_mascota) {
-        return String(first.id_mascota) === String(second.id_mascota)
+    async updatePet(pet) {
+      if (!pet.id_mascota) {
+        this.dashboardError = 'No se encontró el identificador de la mascota.'
+        return
       }
 
-      return first === second
-    },
-    updatePet(pet) {
-      const existingUpdate = this.updatedPets.find((entry) => (
-        this.samePet(entry.original, pet) || this.samePet(entry.pet, pet)
-      ))
-      const originalPet = existingUpdate
-        ? existingUpdate.original
-        : this.pets.find((item) => this.samePet(item, pet))
-          || this.createdPets.find((item) => this.samePet(item, pet))
-          || pet
+      const fields = [
+        'nombre_mascota',
+        'especie',
+        'raza',
+        'sexo',
+        'fecha_nacimiento',
+        'peso',
+        'color',
+        'observaciones'
+      ]
+      const body = Object.fromEntries(
+        fields.filter((field) => field in pet).map((field) => [field, pet[field]])
+      )
 
-      if (existingUpdate) {
-        existingUpdate.pet = pet
-      } else {
-        this.updatedPets.push({ original: originalPet, pet })
+      this.dashboardError = ''
+      try {
+        const updatedPet = await apiRequest(`/pets/${pet.id_mascota}`, {
+          method: 'PATCH',
+          body
+        })
+        this.apiPets = this.apiPets.map((item) => (
+          String(item.id_mascota) === String(updatedPet.id_mascota) ? updatedPet : item
+        ))
+        this.$emit('pet-updated', updatedPet)
+      } catch (error) {
+        this.dashboardError = error.message
       }
-
-      this.$emit('pet-updated', pet)
     },
-    deletePet(pet) {
+    async deletePet(pet) {
       if (!window.confirm(`¿Está seguro de eliminar a ${pet.nombre_mascota}?`)) {
         return
       }
 
-      const existingUpdate = this.updatedPets.find((entry) => this.samePet(entry.pet, pet))
-      const originalPet = existingUpdate
-        ? existingUpdate.original
-        : this.pets.find((item) => this.samePet(item, pet))
-          || this.createdPets.find((item) => this.samePet(item, pet))
-          || pet
+      if (!pet.id_mascota) {
+        this.dashboardError = 'No se encontró el identificador de la mascota.'
+        return
+      }
 
-      this.deletedPets.push(originalPet)
-      this.createdPets = this.createdPets.filter((item) => !this.samePet(item, originalPet))
-      this.updatedPets = this.updatedPets.filter((entry) => !this.samePet(entry.original, originalPet))
-      this.$emit('pet-deleted', pet)
+      this.dashboardError = ''
+      try {
+        await apiRequest(`/pets/${pet.id_mascota}`, { method: 'DELETE' })
+        this.apiPets = this.apiPets.filter(
+          (item) => String(item.id_mascota) !== String(pet.id_mascota)
+        )
+        this.$emit('pet-deleted', pet)
+      } catch (error) {
+        this.dashboardError = error.message
+      }
     },
     openAppointmentModal() {
       this.isAppointmentModalOpen = true
@@ -366,10 +430,27 @@ export default {
       this.activePanel = 'profile'
       this.$emit('edit-profile')
     },
-    saveProfile() {
-      const profile = { ...this.profileDraft }
-      this.$emit('profile-updated', profile)
-      this.profileStatus = 'Cambios listos para sincronizar con el backend.'
+    async saveProfile() {
+      if (!this.apiUserId) {
+        this.profileStatus = 'No fue posible identificar tu cuenta.'
+        return
+      }
+
+      const profile = {
+        usuario: this.profileDraft.username,
+        email: this.profileDraft.email,
+        num_celular: this.profileDraft.cellphone
+      }
+      try {
+        await apiRequest(`/users/${this.apiUserId}`, {
+          method: 'PATCH',
+          body: profile
+        })
+        this.$emit('profile-updated', this.profileDraft)
+        this.profileStatus = 'Perfil actualizado correctamente.'
+      } catch (error) {
+        this.profileStatus = error.message
+      }
     },
     requestPasswordCode() {
       this.passwordCodeRequested = true
@@ -485,6 +566,19 @@ export default {
 .user-dashboard__content {
   min-width: 0;
   padding: 24px;
+}
+
+.user-dashboard__api-status,
+.user-dashboard__api-error {
+  margin: 0 0 16px;
+}
+
+.user-dashboard__api-status {
+  color: var(--color-text-muted);
+}
+
+.user-dashboard__api-error {
+  color: var(--color-error);
 }
 
 .user-dashboard__profile {

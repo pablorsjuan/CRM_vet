@@ -74,26 +74,9 @@
             >
           </label>
 
-          <fieldset class="pet-card__age-choice">
-            <legend>¿Qué dato deseas registrar?</legend>
-            <label>
-              <input v-model="form.ageInputType" type="radio" value="age">
-              Edad en años
-            </label>
-            <label>
-              <input v-model="form.ageInputType" type="radio" value="birthDate">
-              Fecha de nacimiento
-            </label>
-          </fieldset>
-
-          <label v-if="form.ageInputType === 'age'" class="pet-card__field">
-            <span>Edad (años) <span class="pet-card__hint">(obligatorio)</span></span>
-            <input v-model="form.edad" type="number" min="0" max="100" step="1" required>
-          </label>
-
-          <label v-else class="pet-card__field">
-            <span>Fecha de nacimiento <span class="pet-card__hint">(obligatorio)</span></span>
-            <input v-model="form.fecha_nacimiento" type="date" :max="today" required>
+          <label class="pet-card__field">
+            <span>Fecha de nacimiento <span class="pet-card__hint">(opcional)</span></span>
+            <input v-model="form.fecha_nacimiento" type="date" :max="today">
           </label>
 
           <label class="pet-card__field">
@@ -229,16 +212,12 @@ export default {
       return this.petDisplay || this.pet
     },
     ageLabel() {
-      if (this.currentPet.edad !== undefined && this.currentPet.edad !== null) {
-        return `${this.currentPet.edad} años`
-      }
-
       const birthDate = this.currentPet.fecha_nacimiento
       if (!birthDate) {
         return 'Edad no registrada'
       }
 
-      const [year, month, day] = birthDate.split('-').map(Number)
+      const [year, month, day] = birthDate.slice(0, 10).split('-').map(Number)
       const today = new Date()
       let age = today.getFullYear() - year
       const birthDay = new Date(year, month - 1, day)
@@ -294,9 +273,7 @@ export default {
     createForm(pet) {
       return {
         nombre_mascota: pet.nombre_mascota || '',
-        edad: pet.edad ?? '',
-        ageInputType: pet.fecha_nacimiento ? 'birthDate' : 'age',
-        fecha_nacimiento: pet.fecha_nacimiento || '',
+        fecha_nacimiento: pet.fecha_nacimiento?.slice(0, 10) || '',
         sexo: pet.sexo || '',
         color: pet.color || '',
         raza: pet.raza || '',
@@ -325,26 +302,10 @@ export default {
         : new Intl.DateTimeFormat('es', { dateStyle: 'medium' }).format(parsedDate)
     },
     savePet() {
-      const { ageInputType, ...form } = this.form
       const updatedPet = {
         ...this.currentPet,
-        ...form
-      }
-
-      if (ageInputType === 'age') {
-        const age = Number(form.edad)
-        if (!Number.isInteger(age) || age < 0 || age > 100) {
-          return
-        }
-
-        updatedPet.edad = age
-        delete updatedPet.fecha_nacimiento
-      } else {
-        if (!form.fecha_nacimiento || form.fecha_nacimiento > this.today) {
-          return
-        }
-
-        delete updatedPet.edad
+        ...this.form,
+        fecha_nacimiento: this.form.fecha_nacimiento || null
       }
 
       this.petDisplay = updatedPet
@@ -469,26 +430,6 @@ export default {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   padding-top: 14px;
-}
-
-.pet-card__age-choice {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.pet-card__age-choice legend {
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.pet-card__age-choice label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .pet-card__expand {

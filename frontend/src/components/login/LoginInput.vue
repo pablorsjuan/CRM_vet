@@ -7,6 +7,8 @@
       :type="type"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
       required
     >
   </div>
@@ -15,6 +17,7 @@
 <script>
 export default {
   name: 'LoginInput',
+  emits: ['update:modelValue'],
   props: {
     id: {
       type: String,
@@ -35,6 +38,10 @@ export default {
     autocomplete: {
       type: String,
       default: 'off'
+    },
+    modelValue: {
+      type: String,
+      default: ''
     }
   }
 }

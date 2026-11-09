@@ -1,9 +1,17 @@
 <template>
-  <button class="login__submit" type="submit">Iniciar sesión</button>
+  <button class="login__submit" type="submit" :disabled="disabled">
+    {{ disabled ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+  </button>
 </template>
 
 <script>
 export default {
-  name: 'LoginSubmitButton'
+  name: 'LoginSubmitButton',
+  props: {
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
